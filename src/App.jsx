@@ -1,9 +1,185 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, FileSpreadsheet, BarChart, Award, BookOpen, Image } from 'lucide-react';
+import { 
+  Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, 
+  FileSpreadsheet, BarChart, Award, BookOpen, Image, Square, Sigma, Percent, 
+  PieChart, LineChart, GitBranch, Divide, Function, Hash, Infinity as InfinityIcon, 
+  Binary, AlignJustify, Atom, Pi, Loader2, Recycle
+} from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './MathsFlash.css';
 
+// Add custom CSS for enhanced visual design
+const customStyles = `
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&family=Poppins:wght@400;500;600;700&family=Outfit:wght@400;500;600&display=swap');
+
+  :root {
+    --primary-color: #5b6eae;
+    --primary-light: #e8ecf7;
+    --primary-dark: #3c4e8e;
+    --secondary-color: #6eb5b8;
+    --secondary-light: #e8f6f7;
+    --secondary-dark: #4e8285;
+    --accent-color: #b085c9;
+    --accent-light: #f5ebfa;
+    --success-color: #78c2a4;
+    --success-light: #e8f6f0;
+    --error-color: #e28c8c;
+    --error-light: #fceeee;
+    --warning-color: #e2c18c;
+    --warning-light: #fcf6ee;
+    --neutral-50: #f9fafb;
+    --neutral-100: #f3f4f6;
+    --neutral-200: #e5e7eb;
+    --neutral-300: #d1d5db;
+    --neutral-400: #9ca3af;
+    --neutral-500: #6b7280;
+    --neutral-600: #4b5563;
+    --neutral-700: #374151;
+    --neutral-800: #1f2937;
+    --neutral-900: #111827;
+  }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background-color: var(--neutral-50);
+    color: var(--neutral-700);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .card-container {
+    perspective: 1000px;
+  }
+
+  .card {
+    transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .card.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-front, .card-back {
+    backface-visibility: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+    border-radius: 16px;
+  }
+
+  .card-back {
+    transform: rotateY(180deg);
+  }
+
+  .topic-card {
+    transition: all 0.3s ease;
+  }
+
+  .topic-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  }
+
+  .input-field {
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    border: 1px solid var(--neutral-300);
+  }
+
+  .input-field:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px var(--primary-light);
+  }
+
+  .btn {
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+  }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-dark);
+  }
+
+  .btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--secondary-dark);
+  }
+
+  .btn-success {
+    background-color: var(--success-color);
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: var(--success-color);
+    filter: brightness(90%);
+  }
+
+  .btn-error {
+    background-color: var(--error-color);
+    color: white;
+  }
+
+  .btn-error:hover {
+    background-color: var(--error-color);
+    filter: brightness(90%);
+  }
+
+  .btn-neutral {
+    background-color: var(--neutral-200);
+    color: var(--neutral-700);
+  }
+
+  .btn-neutral:hover {
+    background-color: var(--neutral-300);
+  }
+
+  .answer-correct {
+    animation: pulse-success 0.6s;
+  }
+
+  .answer-incorrect {
+    animation: pulse-error 0.6s;
+  }
+
+  @keyframes pulse-success {
+    0% { box-shadow: 0 0 0 0 rgba(120, 194, 164, 0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(120, 194, 164, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(120, 194, 164, 0); }
+  }
+
+  @keyframes pulse-error {
+    0% { box-shadow: 0 0 0 0 rgba(226, 140, 140, 0.5); }
+    70% { box-shadow: 0 0 0 10px rgba(226, 140, 140, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(226, 140, 140, 0); }
+  }
+`;
+
 function MathsFlashApp() {
+  // Add custom styles to head
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = customStyles;
+    document.head.appendChild(styleElement);
+    
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   // Basic state
   const [mode, setMode] = useState('student');
   const [view, setView] = useState('topics');
@@ -50,13 +226,28 @@ function MathsFlashApp() {
     skipped: 0
   });
   
-  // Topic icons mapping
+  // Topic icons mapping - Expanded with more math icons
   const topicIcons = {
     calculator: <Calculator size={24} />,
     circle: <Circle size={24} />,
     triangle: <Triangle size={24} />,
     penLine: <PenLine size={24} />,
-    table: <Table size={24} />
+    table: <Table size={24} />,
+    square: <Square size={24} />,
+    sigma: <Sigma size={24} />,
+    percent: <Percent size={24} />,
+    pieChart: <PieChart size={24} />,
+    lineChart: <LineChart size={24} />,
+    gitBranch: <GitBranch size={24} />, // For sequences and patterns
+    divide: <Divide size={24} />,
+    function: <Function size={24} />,
+    hash: <Hash size={24} />, // For number theory
+    infinity: <InfinityIcon size={24} />,
+    binary: <Binary size={24} />, // For number bases
+    alignJustify: <AlignJustify size={24} />, // For matrices
+    atom: <Atom size={24} />, // For physics
+    pi: <Pi size={24} />,
+    recycle: <Recycle size={24} /> // For transformations
   };
   
   // Topics and cards
@@ -137,6 +328,10 @@ function MathsFlashApp() {
   const [currentTopic, setCurrentTopic] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   
+  // Animation states
+  const [animateCorrect, setAnimateCorrect] = useState(false);
+  const [animateIncorrect, setAnimateIncorrect] = useState(false);
+
   // Initialize performance data when topics change
   useEffect(() => {
     const initialPerformanceData = {};
@@ -638,6 +833,7 @@ function MathsFlashApp() {
     const summary = {
       topicName: currentTopic.title,
       icon: currentTopic.icon,
+      imageUrl: currentTopic.imageUrl,
       totalCards: currentTopic.cards.length,
       totalAttempted,
       correct: topicData.correct,
@@ -862,6 +1058,15 @@ function MathsFlashApp() {
     
     setAnswerStatus(isCorrect ? 'correct' : 'incorrect');
     
+    // Set animation state
+    if (isCorrect) {
+      setAnimateCorrect(true);
+      setTimeout(() => setAnimateCorrect(false), 800);
+    } else {
+      setAnimateIncorrect(true);
+      setTimeout(() => setAnimateIncorrect(false), 800);
+    }
+    
     // Update session stats
     const newStats = {...stats};
     if (isCorrect) {
@@ -922,11 +1127,11 @@ function MathsFlashApp() {
   // Render functions
   function renderHeader() {
     return (
-      <header className="bg-blue-600 text-white shadow-md">
-        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+      <header className="bg-gradient-to-r from-primary-color to-secondary-color text-white shadow-lg">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center">
             <h1 
-              className="text-xl md:text-2xl font-bold cursor-pointer" 
+              className="text-xl md:text-2xl font-bold cursor-pointer font-poppins" 
               onClick={goToTopics}
             >
               MathsFlash
@@ -935,13 +1140,13 @@ function MathsFlashApp() {
           
           <div className="flex items-center space-x-2">
             {mode === 'teacher' && (
-              <span className="bg-yellow-500 text-xs font-medium px-2 py-1 rounded-full">
+              <span className="bg-warning-color text-neutral-700 text-xs font-medium px-3 py-1 rounded-full">
                 Teacher Mode
               </span>
             )}
             
             <button 
-              className="p-2 rounded-full hover:bg-blue-700"
+              className="p-2 rounded-full hover:bg-white/20 transition-colors"
               onClick={() => {
                 if (mode === 'teacher') {
                   setMode('student');
@@ -960,54 +1165,54 @@ function MathsFlashApp() {
   
   function renderTopics() {
     return (
-      <div className="p-4">
-        <h2 className="text-2xl font-bold text-center mb-6">Foundation Maths Topics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="p-6 bg-neutral-50">
+        <h2 className="text-3xl font-bold text-center mb-8 text-primary-dark font-poppins">Foundation Maths Topics</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {topics.map(topic => (
             <div 
               key={topic.id} 
-              className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow"
+              className="topic-card bg-white rounded-xl shadow-md p-5 border-l-4 border-primary-color cursor-pointer hover:shadow-lg transition"
               onClick={() => selectTopic(topic)}
             >
               {/* Display topic image if available */}
               {topic.imageUrl && (
-                <div className="mb-3 flex justify-center">
+                <div className="mb-4 flex justify-center">
                   <img 
                     src={topic.imageUrl} 
                     alt={`${topic.title} visualization`} 
-                    className="h-32 rounded-md object-contain"
+                    className="h-36 rounded-md object-contain"
                   />
                 </div>
               )}
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
-                  <div className="text-blue-500">
+                  <div className="text-primary-color">
                     {topicIcons[topic.icon]}
                   </div>
-                  <h3 className="text-lg font-semibold">{topic.title}</h3>
+                  <h3 className="text-lg font-semibold font-poppins">{topic.title}</h3>
                 </div>
                 <div className="flex items-center">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  <span className="px-3 py-1 bg-primary-light text-primary-dark rounded-full text-xs font-medium">
                     {topic.cards.length} cards
                   </span>
-                  <ChevronRight size={16} className="ml-2 text-gray-400" />
+                  <ChevronRight size={16} className="ml-2 text-neutral-400" />
                 </div>
               </div>
               
               {/* Show previous performance if available */}
               {performanceData[topic.id] && 
                (performanceData[topic.id].correct > 0 || performanceData[topic.id].incorrect > 0) && (
-                <div className="mt-2 pt-2 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="mt-3 pt-3 border-t border-neutral-100">
+                  <div className="flex items-center justify-between text-xs text-neutral-500">
                     <div>
                       Previous: {performanceData[topic.id].correct} correct, 
                       {performanceData[topic.id].incorrect} incorrect
                     </div>
                     <div className="flex items-center">
                       {performanceData[topic.id].correct + performanceData[topic.id].incorrect > 0 && (
-                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-1">
+                        <div className="w-16 bg-neutral-200 rounded-full h-2 mr-1">
                           <div 
-                            className="bg-green-500 h-2 rounded-full" 
+                            className="bg-success-color h-2 rounded-full" 
                             style={{ 
                               width: `${Math.round(performanceData[topic.id].correct / 
                                 (performanceData[topic.id].correct + performanceData[topic.id].incorrect) * 100)}%` 
@@ -1022,9 +1227,9 @@ function MathsFlashApp() {
               
               {/* Edit topic button (only visible in teacher mode) */}
               {mode === 'teacher' && (
-                <div className="mt-2 text-right">
+                <div className="mt-3 text-right">
                   <button 
-                    className="text-gray-500 text-xs hover:text-blue-500"
+                    className="text-neutral-500 text-xs hover:text-primary-color transition-colors"
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent triggering the parent onClick
                       editTopic(topic);
@@ -1039,13 +1244,13 @@ function MathsFlashApp() {
           
           {mode === 'teacher' && (
             <div 
-              className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors"
+              className="bg-neutral-50 rounded-xl border-2 border-dashed border-neutral-300 p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-100 transition-colors"
               onClick={() => setView('newTopic')}
             >
-              <div className="text-gray-400 mb-2">
-                <Plus size={24} />
+              <div className="text-neutral-400 mb-3">
+                <Plus size={32} />
               </div>
-              <p className="text-gray-500">Add New Topic</p>
+              <p className="text-neutral-500 font-medium">Add New Topic</p>
             </div>
           )}
         </div>
@@ -1055,30 +1260,31 @@ function MathsFlashApp() {
   
   function renderNewTopic() {
     return (
-      <div className="p-4 max-w-md mx-auto">
-        <h2 className="text-xl font-bold mb-6">Create New Foundation Maths Topic</h2>
-        <div className="space-y-6">
+      <div className="p-6 max-w-md mx-auto">
+        <h2 className="text-2xl font-bold mb-8 text-primary-dark text-center font-poppins">Create New Foundation Maths Topic</h2>
+        <div className="bg-white p-6 rounded-xl shadow-md space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Topic Name</label>
             <input
               type="text"
               value={newTopicName}
               onChange={(e) => setNewTopicName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               autoFocus
+              placeholder="Enter topic name"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Choose Icon</label>
-            <div className="grid grid-cols-3 gap-3">
+            <label className="block text-sm font-medium text-neutral-700 mb-3">Choose Icon</label>
+            <div className="grid grid-cols-5 gap-3">
               {Object.entries(topicIcons).map(([key, icon]) => (
                 <div 
                   key={key}
                   onClick={() => setSelectedIcon(key)}
-                  className={`flex items-center justify-center p-3 rounded-md cursor-pointer border-2 ${selectedIcon === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                  className={`flex items-center justify-center p-3 rounded-lg cursor-pointer border-2 transition-all ${selectedIcon === key ? 'border-primary-color bg-primary-light' : 'border-neutral-200 hover:border-neutral-300'}`}
                 >
-                  <div className={selectedIcon === key ? 'text-blue-500' : 'text-gray-600'}>
+                  <div className={selectedIcon === key ? 'text-primary-color' : 'text-neutral-600'}>
                     {icon}
                   </div>
                 </div>
@@ -1088,10 +1294,10 @@ function MathsFlashApp() {
           
           {/* New topic image upload section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Image (optional)</label>
-            <div className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-md bg-gray-50">
-              <Image size={24} className="text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500 mb-3">Upload an image to visually represent this topic</p>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Topic Image (optional)</label>
+            <div className="flex flex-col items-center p-5 border-2 border-dashed border-neutral-300 rounded-lg bg-neutral-50">
+              <Image size={28} className="text-neutral-400 mb-3" />
+              <p className="text-sm text-neutral-500 mb-4 text-center">Upload an image to visually represent this topic</p>
               
               <input
                 type="file"
@@ -1103,19 +1309,19 @@ function MathsFlashApp() {
               
               <label
                 htmlFor="topic-image-upload"
-                className="px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
+                className="btn btn-primary px-4 py-2 rounded-lg"
               >
                 Choose Image
               </label>
               
               {/* Preview the selected image */}
               {topicImageUrl && (
-                <div className="mt-4 border rounded p-2 w-full">
-                  <p className="text-xs text-gray-500 mb-2">Selected image:</p>
+                <div className="mt-4 border rounded-lg p-3 w-full bg-white">
+                  <p className="text-xs text-neutral-500 mb-2">Selected image:</p>
                   <img 
                     src={topicImageUrl} 
                     alt="Topic preview" 
-                    className="mx-auto max-h-32 object-contain"
+                    className="mx-auto max-h-36 object-contain rounded-md"
                   />
                 </div>
               )}
@@ -1124,7 +1330,7 @@ function MathsFlashApp() {
           
           <div className="flex justify-between pt-4">
             <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className="btn btn-neutral px-5 py-2"
               onClick={() => {
                 setView('topics');
                 setTopicImageUrl(''); // Clear the image state
@@ -1133,7 +1339,7 @@ function MathsFlashApp() {
               Cancel
             </button>
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="btn btn-primary px-5 py-2"
               onClick={saveNewTopic}
             >
               Create Topic
@@ -1149,30 +1355,31 @@ function MathsFlashApp() {
     const topicToEdit = topics.find(t => t.title === newTopicName);
     
     return (
-      <div className="p-4 max-w-md mx-auto">
-        <h2 className="text-xl font-bold mb-6">Edit Foundation Maths Topic</h2>
-        <div className="space-y-6">
+      <div className="p-6 max-w-md mx-auto">
+        <h2 className="text-2xl font-bold mb-8 text-primary-dark text-center font-poppins">Edit Foundation Maths Topic</h2>
+        <div className="bg-white p-6 rounded-xl shadow-md space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Topic Name</label>
             <input
               type="text"
               value={newTopicName}
               onChange={(e) => setNewTopicName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               autoFocus
+              placeholder="Enter topic name"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Choose Icon</label>
-            <div className="grid grid-cols-3 gap-3">
+            <label className="block text-sm font-medium text-neutral-700 mb-3">Choose Icon</label>
+            <div className="grid grid-cols-5 gap-3">
               {Object.entries(topicIcons).map(([key, icon]) => (
                 <div 
                   key={key}
                   onClick={() => setSelectedIcon(key)}
-                  className={`flex items-center justify-center p-3 rounded-md cursor-pointer border-2 ${selectedIcon === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                  className={`flex items-center justify-center p-3 rounded-lg cursor-pointer border-2 transition-all ${selectedIcon === key ? 'border-primary-color bg-primary-light' : 'border-neutral-200 hover:border-neutral-300'}`}
                 >
-                  <div className={selectedIcon === key ? 'text-blue-500' : 'text-gray-600'}>
+                  <div className={selectedIcon === key ? 'text-primary-color' : 'text-neutral-600'}>
                     {icon}
                   </div>
                 </div>
@@ -1182,10 +1389,10 @@ function MathsFlashApp() {
           
           {/* Topic image upload/edit section */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Image (optional)</label>
-            <div className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-md bg-gray-50">
-              <Image size={24} className="text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500 mb-3">Upload an image to visually represent this topic</p>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Topic Image (optional)</label>
+            <div className="flex flex-col items-center p-5 border-2 border-dashed border-neutral-300 rounded-lg bg-neutral-50">
+              <Image size={28} className="text-neutral-400 mb-3" />
+              <p className="text-sm text-neutral-500 mb-4 text-center">Upload an image to visually represent this topic</p>
               
               <input
                 type="file"
@@ -1197,18 +1404,18 @@ function MathsFlashApp() {
               
               <label
                 htmlFor="topic-image-edit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
+                className="btn btn-primary px-4 py-2 rounded-lg"
               >
                 {topicImageUrl ? 'Change Image' : 'Choose Image'}
               </label>
               
               {/* Preview the selected image */}
               {topicImageUrl && (
-                <div className="mt-4 border rounded p-2 w-full">
+                <div className="mt-4 border rounded-lg p-3 w-full bg-white">
                   <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-gray-500">Current image:</p>
+                    <p className="text-xs text-neutral-500">Current image:</p>
                     <button 
-                      className="text-xs text-red-500 hover:text-red-700"
+                      className="text-xs text-error-color hover:text-red-700 transition-colors"
                       onClick={() => setTopicImageUrl('')}
                     >
                       Remove
@@ -1217,7 +1424,7 @@ function MathsFlashApp() {
                   <img 
                     src={topicImageUrl} 
                     alt="Topic preview" 
-                    className="mx-auto max-h-32 object-contain"
+                    className="mx-auto max-h-36 object-contain rounded-md"
                   />
                 </div>
               )}
@@ -1226,7 +1433,7 @@ function MathsFlashApp() {
           
           <div className="flex justify-between pt-4">
             <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className="btn btn-neutral px-5 py-2"
               onClick={() => {
                 setView('topics');
                 setNewTopicName('');
@@ -1237,7 +1444,7 @@ function MathsFlashApp() {
               Cancel
             </button>
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="btn btn-primary px-5 py-2"
               onClick={() => saveEditedTopic(topicToEdit.id)}
             >
               Save Changes
@@ -1252,10 +1459,10 @@ function MathsFlashApp() {
     if (!currentTopic || !currentTopic.cards || currentTopic.cards.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center p-8">
-          <div className="text-gray-500 mb-4">No cards available for this topic.</div>
+          <div className="text-neutral-500 mb-6 text-lg">No cards available for this topic.</div>
           {mode === 'teacher' && (
             <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="btn btn-primary px-6 py-3 rounded-lg"
               onClick={createNewCard}
             >
               Create First Card
@@ -1268,25 +1475,31 @@ function MathsFlashApp() {
     const card = currentTopic.cards[currentCardIndex];
     
     return (
-      <div className="p-4">
+      <div className="p-6 max-w-4xl mx-auto">
         {/* Stats and Timer */}
-        <div className="bg-white rounded-lg shadow-md p-3 mb-4 flex justify-between items-center">
-          <div className="flex space-x-4">
-            <div className="text-green-600 font-medium">✓ {stats.correct}</div>
-            <div className="text-red-600 font-medium">✗ {stats.incorrect}</div>
-            <div className="text-gray-600 font-medium">⟳ {stats.skipped}</div>
+        <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex justify-between items-center">
+          <div className="flex space-x-6">
+            <div className="text-success-color font-medium flex items-center">
+              <Check size={18} className="mr-1" /> {stats.correct}
+            </div>
+            <div className="text-error-color font-medium flex items-center">
+              <X size={18} className="mr-1" /> {stats.incorrect}
+            </div>
+            <div className="text-neutral-500 font-medium flex items-center">
+              <Recycle size={18} className="mr-1" /> {stats.skipped}
+            </div>
           </div>
           
-          <div className="flex items-center space-x-2">
-            <div className="text-gray-700 font-mono">{formatTime(timer)}</div>
+          <div className="flex items-center space-x-3">
+            <div className="text-neutral-700 font-mono bg-neutral-100 px-3 py-1 rounded-lg">{formatTime(timer)}</div>
             <button 
-              className={`px-2 py-1 rounded-md text-xs ${timerActive ? 'bg-red-500' : 'bg-green-500'} text-white`}
+              className={`px-3 py-1 rounded-lg text-sm font-medium ${timerActive ? 'bg-error-color' : 'bg-success-color'} text-white`}
               onClick={toggleTimer}
             >
               {timerActive ? 'Pause' : 'Start'}
             </button>
             <button 
-              className="px-2 py-1 bg-gray-200 rounded-md text-xs"
+              className="px-3 py-1 bg-neutral-200 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-300 transition-colors"
               onClick={resetStats}
             >
               Reset
@@ -1295,178 +1508,180 @@ function MathsFlashApp() {
         </div>
         
         {/* Topic and Card Info */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
             <button 
-              className="mr-3 px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded flex items-center"
+              className="mr-4 px-3 py-1 text-sm bg-neutral-100 hover:bg-neutral-200 rounded-lg flex items-center transition-colors"
               onClick={goToTopics}
             >
-              <ChevronRight size={14} className="transform rotate-180 mr-1" />
+              <ChevronRight size={16} className="transform rotate-180 mr-1" />
               Topics
             </button>
-            <div className="text-blue-500 mr-2">
+            <div className="text-primary-color mr-3">
               {topicIcons[currentTopic.icon]}
             </div>
-            <h2 className="text-xl font-bold">
+            <h2 className="text-2xl font-bold font-poppins text-primary-dark">
               {currentTopic.title}
               {card.subtopic && card.subtopic !== 'General' && (
-                <span className="ml-2 text-sm font-normal text-gray-500">
+                <span className="ml-2 text-sm font-normal text-neutral-500">
                   {card.subtopic}
                 </span>
               )}
             </h2>
           </div>
-          <div className="text-sm">
+          <div className="text-sm font-medium bg-neutral-100 px-3 py-1 rounded-lg">
             Card {currentCardIndex + 1} of {currentTopic.cards.length}
           </div>
         </div>
         
         {/* Flashcard with flip animation */}
-        <div className="h-96 w-full perspective-1000 mb-4">
-          <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+        <div className="h-96 w-full card-container mb-6">
+          <div className={`card relative w-full h-full ${isFlipped ? 'flipped' : ''}`}>
             {/* Front of card (Question) */}
-            <div className="absolute w-full h-full bg-white rounded-lg shadow-lg backface-hidden">
-              <div className="p-6 flex flex-col h-full">
-                <div className="text-gray-500 text-sm mb-2">Question:</div>
-                <div className="mb-4 font-medium text-lg flex-grow">{card.question}</div>
-                
-                {card.imageUrl && (
-                  <div className="my-4 flex justify-center">
-                    <img 
-                      src={card.imageUrl} 
-                      alt="Question illustration" 
-                      className="max-h-48 rounded-md"
+            <div className="card-front absolute w-full h-full bg-white rounded-xl shadow-md p-6 flex flex-col">
+              <div className="text-neutral-500 text-sm mb-2 font-medium">Question:</div>
+              <div className="mb-6 font-medium text-lg flex-grow font-outfit">{card.question}</div>
+              
+              {card.imageUrl && (
+                <div className="my-4 flex justify-center">
+                  <img 
+                    src={card.imageUrl} 
+                    alt="Question illustration" 
+                    className="max-h-48 rounded-lg shadow-sm"
+                  />
+                </div>
+              )}
+              
+              <form onSubmit={handleSubmit} className="mt-auto">
+                <div className="mb-5">
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">Your Answer:</label>
+                  <div className="flex">
+                    <input
+                      ref={answerInputRef}
+                      type="text"
+                      value={studentAnswer}
+                      onChange={(e) => setStudentAnswer(e.target.value)}
+                      className={`flex-grow p-3 border rounded-lg input-field ${
+                        animateCorrect 
+                          ? 'answer-correct border-success-color' 
+                          : animateIncorrect
+                          ? 'answer-incorrect border-error-color'
+                          : answerStatus === 'correct' 
+                          ? 'border-success-color bg-success-light' 
+                          : answerStatus === 'incorrect'
+                          ? 'border-error-color bg-error-light'
+                          : 'border-neutral-300'
+                      }`}
+                      placeholder="Type your answer here"
+                      disabled={answerStatus !== null}
                     />
-                  </div>
-                )}
-                
-                <form onSubmit={handleSubmit} className="mt-auto">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Answer:</label>
-                    <div className="flex">
-                      <input
-                        ref={answerInputRef}
-                        type="text"
-                        value={studentAnswer}
-                        onChange={(e) => setStudentAnswer(e.target.value)}
-                        className={`flex-grow p-2 border rounded-l-md ${
-                          answerStatus === 'correct' 
-                            ? 'border-green-500 bg-green-50' 
-                            : answerStatus === 'incorrect'
-                            ? 'border-red-500 bg-red-50'
-                            : 'border-gray-300'
-                        }`}
-                        placeholder="Type your answer here"
-                        disabled={answerStatus !== null}
-                      />
-                      {answerStatus === 'correct' && (
-                        <div className="flex items-center justify-center w-10 bg-green-500 text-white rounded-r-md">
-                          <Check size={20} />
-                        </div>
-                      )}
-                      {answerStatus === 'incorrect' && (
-                        <div className="flex items-center justify-center w-10 bg-red-500 text-white rounded-r-md">
-                          <X size={20} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    {answerStatus === null ? (
-                      <>
-                        <button 
-                          type="submit"
-                          className="flex-grow py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          Check Answer
-                        </button>
-                        {showHint ? (
-                          <div className="flex-grow bg-yellow-50 p-3 rounded-md border border-yellow-100">
-                            <div className="text-sm text-gray-700">{card.hint}</div>
-                          </div>
-                        ) : (
-                          <button 
-                            type="button"
-                            className="flex-grow py-2 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200"
-                            onClick={toggleHint}
-                          >
-                            Show Hint
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          type="button"
-                          className="flex-grow py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                          onClick={resetCard}
-                        >
-                          Try Again
-                        </button>
-                        <button 
-                          type="submit"
-                          className="flex-grow py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          View Solution
-                        </button>
-                      </>
+                    {answerStatus === 'correct' && (
+                      <div className="flex items-center justify-center w-12 bg-success-color text-white rounded-r-lg ml-[-8px]">
+                        <Check size={20} />
+                      </div>
+                    )}
+                    {answerStatus === 'incorrect' && (
+                      <div className="flex items-center justify-center w-12 bg-error-color text-white rounded-r-lg ml-[-8px]">
+                        <X size={20} />
+                      </div>
                     )}
                   </div>
-                </form>
-              </div>
+                </div>
+                
+                <div className="flex space-x-3">
+                  {answerStatus === null ? (
+                    <>
+                      <button 
+                        type="submit"
+                        className="flex-grow py-3 btn btn-primary rounded-lg font-medium"
+                      >
+                        Check Answer
+                      </button>
+                      {showHint ? (
+                        <div className="flex-grow bg-warning-light p-4 rounded-lg border border-warning-color">
+                          <div className="text-neutral-700">{card.hint}</div>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          className="flex-grow py-3 bg-warning-light text-neutral-700 rounded-lg hover:bg-warning-color hover:text-white transition-colors font-medium"
+                          onClick={toggleHint}
+                        >
+                          Show Hint
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <button 
+                        type="button"
+                        className="flex-grow py-3 btn btn-neutral rounded-lg font-medium"
+                        onClick={resetCard}
+                      >
+                        Try Again
+                      </button>
+                      <button 
+                        type="submit"
+                        className="flex-grow py-3 btn btn-primary rounded-lg font-medium"
+                      >
+                        View Solution
+                      </button>
+                    </>
+                  )}
+                </div>
+              </form>
             </div>
             
             {/* Back of card (Answer) */}
-            <div className="absolute w-full h-full bg-blue-50 rounded-lg shadow-lg backface-hidden rotate-y-180 overflow-auto">
+            <div className="card-back absolute w-full h-full bg-primary-light rounded-xl shadow-md overflow-auto">
               <div className="p-6">
-                <h3 className="font-semibold mb-2">Answer:</h3>
-                <div className="mb-4 font-medium">{card.answer}</div>
+                <h3 className="font-bold mb-3 text-primary-dark">Answer:</h3>
+                <div className="mb-5 text-lg font-medium font-outfit bg-white p-4 rounded-lg border border-primary-light">{card.answer}</div>
                 
                 {card.answerImageUrl && (
-                  <div className="my-4 flex justify-center">
+                  <div className="my-5 flex justify-center">
                     <img 
                       src={card.answerImageUrl} 
                       alt="Answer illustration" 
-                      className="max-h-40 rounded-md"
+                      className="max-h-40 rounded-lg shadow-sm"
                     />
                   </div>
                 )}
                 
                 {card.explanation && (
-                  <div className="mt-4">
-                    <h3 className="font-semibold mb-2">Solution:</h3>
-                    <div className="bg-white p-3 rounded-md border border-gray-200 whitespace-pre-line">
+                  <div className="mt-6">
+                    <h3 className="font-bold mb-3 text-primary-dark">Solution:</h3>
+                    <div className="bg-white p-4 rounded-lg border border-primary-light whitespace-pre-line font-outfit">
                       {card.explanation}
                     </div>
                   </div>
                 )}
                 
                 {card.videoUrl && (
-                  <div className="mt-4">
-                    <h3 className="font-semibold mb-2">Video Explanation:</h3>
+                  <div className="mt-6">
+                    <h3 className="font-bold mb-3 text-primary-dark">Video Explanation:</h3>
                     <a 
                       href={card.videoUrl} 
                       target="_blank" 
                       rel="noopener noreferrer" 
-                      className="text-blue-500 hover:underline block p-3 bg-white rounded-md border border-gray-200"
+                      className="text-primary-color hover:underline block p-4 bg-white rounded-lg border border-primary-light"
                     >
                       <div className="flex items-center">
-                        <div className="mr-2 text-red-500">
+                        <div className="mr-3 text-red-500">
                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
                             <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
                           </svg>
                         </div>
-                        <span>Watch video explanation</span>
+                        <span className="font-medium">Watch video explanation</span>
                       </div>
                     </a>
                   </div>
                 )}
                 
-                <div className="mt-6 flex justify-center">
+                <div className="mt-8 flex justify-center">
                   <button 
-                    className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                    className="px-8 py-3 btn btn-primary rounded-lg font-medium"
                     onClick={() => {
                       // If we're on the last card, go to summary
                       if (currentCardIndex === currentTopic.cards.length - 1) {
@@ -1489,21 +1704,21 @@ function MathsFlashApp() {
         </div>
         
         {/* Navigation controls */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center mb-6">
           <button 
-            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md disabled:opacity-50"
+            className="px-4 py-2 btn btn-neutral rounded-lg disabled:opacity-50"
             onClick={prevCard}
             disabled={currentCardIndex === 0}
           >
             Previous
           </button>
           
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-neutral-500 font-medium">
             {answerStatus === null ? "Enter your answer and check" : isFlipped ? "Review the solution" : "Check your answer then view solution"}
           </div>
           
           <button 
-            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md"
+            className="px-4 py-2 btn btn-neutral rounded-lg"
             onClick={skipCard}
           >
             Skip
@@ -1512,34 +1727,37 @@ function MathsFlashApp() {
         
         {/* Teacher controls */}
         {mode === 'teacher' && (
-          <div className="flex justify-center mt-4 space-x-4">
+          <div className="flex justify-center mt-6 space-x-4">
             <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-md"
+              className="px-5 py-3 btn btn-primary rounded-lg flex items-center font-medium"
               onClick={createNewCard}
             >
+              <Plus size={18} className="mr-2" />
               Add Card
             </button>
             {card && (
               <>
                 <button 
-                  className="px-4 py-2 bg-yellow-500 text-white rounded-md"
+                  className="px-5 py-3 bg-warning-color text-white rounded-lg hover:bg-yellow-500 transition-colors flex items-center font-medium"
                   onClick={() => editCard(card)}
                 >
+                  <PenLine size={18} className="mr-2" />
                   Edit Card
                 </button>
                 <button 
-                  className="px-4 py-2 bg-red-500 text-white rounded-md"
+                  className="px-5 py-3 btn btn-error rounded-lg flex items-center font-medium"
                   onClick={() => deleteCard(card.id)}
                 >
+                  <X size={18} className="mr-2" />
                   Delete Card
                 </button>
               </>
             )}
             <button 
-              className="px-4 py-2 bg-green-500 text-white rounded-md flex items-center"
+              className="px-5 py-3 btn btn-success rounded-lg flex items-center font-medium"
               onClick={() => setView('import')}
             >
-              <FileSpreadsheet size={18} className="mr-1" />
+              <FileSpreadsheet size={18} className="mr-2" />
               Import from Excel
             </button>
           </div>
@@ -1551,62 +1769,81 @@ function MathsFlashApp() {
   function renderSummary() {
     if (!summaryData) {
       prepareSummaryData();
-      return <div className="p-4 text-center">Preparing your summary...</div>;
+      return (
+        <div className="p-8 text-center flex flex-col items-center justify-center">
+          <Loader2 size={40} className="text-primary-color animate-spin mb-4" />
+          <div className="text-lg text-neutral-600">Preparing your summary...</div>
+        </div>
+      );
     }
     
     return (
-      <div className="p-4 max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="p-6 max-w-4xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Header section */}
-          <div className="bg-blue-600 text-white p-6">
+          <div className="bg-gradient-to-r from-primary-color to-secondary-color text-white p-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
-                <div className="text-white mr-3">
+                <div className="text-white mr-4 bg-white/20 p-3 rounded-full">
                   {topicIcons[summaryData.icon]}
                 </div>
-                <h2 className="text-2xl font-bold">{summaryData.topicName} - Performance Summary</h2>
+                <div>
+                  <h2 className="text-2xl font-bold font-poppins mb-1">{summaryData.topicName}</h2>
+                  <div className="text-white/80">Performance Summary</div>
+                </div>
               </div>
-              <div className="bg-white text-blue-800 rounded-full w-16 h-16 flex items-center justify-center font-bold text-2xl border-4 border-white">
+              <div className="bg-white text-primary-dark rounded-full w-20 h-20 flex items-center justify-center font-bold text-3xl border-4 border-white shadow-md font-poppins">
                 {summaryData.grade.letter}
               </div>
             </div>
+            
+            {/* Display topic image if available */}
+            {summaryData.imageUrl && (
+              <div className="mt-6 flex justify-center">
+                <img 
+                  src={summaryData.imageUrl} 
+                  alt={`${summaryData.topicName} visualization`} 
+                  className="h-40 rounded-lg object-contain bg-white/10 p-2"
+                />
+              </div>
+            )}
           </div>
           
           {/* Overall stats */}
-          <div className="p-6 border-b">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-1">
+          <div className="p-8 border-b">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-primary-light p-5 rounded-xl text-center">
+                <div className="text-3xl font-bold text-primary-dark mb-2 font-poppins">
                   {summaryData.overallCorrectPercentage}%
                 </div>
-                <div className="text-sm text-gray-500">Overall Score</div>
+                <div className="text-sm text-neutral-600">Overall Score</div>
               </div>
               
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-green-600 mb-1">
+              <div className="bg-success-light p-5 rounded-xl text-center">
+                <div className="text-3xl font-bold text-success-color mb-2 font-poppins">
                   {summaryData.correct}
                 </div>
-                <div className="text-sm text-gray-500">Correct Answers</div>
+                <div className="text-sm text-neutral-600">Correct Answers</div>
               </div>
               
-              <div className="bg-red-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-red-600 mb-1">
+              <div className="bg-error-light p-5 rounded-xl text-center">
+                <div className="text-3xl font-bold text-error-color mb-2 font-poppins">
                   {summaryData.incorrect}
                 </div>
-                <div className="text-sm text-gray-500">Incorrect Answers</div>
+                <div className="text-sm text-neutral-600">Incorrect Answers</div>
               </div>
               
-              <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-gray-600 mb-1">
+              <div className="bg-neutral-100 p-5 rounded-xl text-center">
+                <div className="text-3xl font-bold text-neutral-700 mb-2 font-mono">
                   {formatTime(summaryData.timeTaken)}
                 </div>
-                <div className="text-sm text-gray-500">Time Taken</div>
+                <div className="text-sm text-neutral-600">Time Taken</div>
               </div>
             </div>
             
-            <div className="mt-4 text-center">
-              <div className="text-lg font-bold mb-2">{summaryData.grade.comment}</div>
-              <p className="text-gray-600">
+            <div className="mt-6 text-center">
+              <div className="text-xl font-bold mb-2 text-primary-dark font-poppins">{summaryData.grade.comment}</div>
+              <p className="text-neutral-600">
                 You attempted {summaryData.totalAttempted} out of {summaryData.totalCards} questions.
                 {summaryData.skipped > 0 && ` You skipped ${summaryData.skipped} questions.`}
               </p>
@@ -1614,26 +1851,26 @@ function MathsFlashApp() {
           </div>
           
           {/* Strengths and weaknesses */}
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Strengths section */}
             <div>
-              <h3 className="text-lg font-bold mb-3 flex items-center">
-                <Award size={20} className="text-yellow-500 mr-2" /> Your Strengths
+              <h3 className="text-lg font-bold mb-4 flex items-center text-primary-dark font-poppins">
+                <Award size={22} className="text-yellow-500 mr-2" /> Your Strengths
               </h3>
               
               {summaryData.strengths.length > 0 ? (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {summaryData.strengths.map(subtopic => (
-                    <li key={subtopic} className="bg-green-50 p-3 rounded-md">
+                    <li key={subtopic} className="bg-success-light p-4 rounded-xl">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">{subtopic}</span>
-                        <span className="text-green-600 font-medium">
+                        <span className="text-success-color font-bold">
                           {summaryData.subtopicsAnalysis[subtopic].correctPercentage}% correct
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div className="w-full bg-white rounded-full h-2 mt-3">
                         <div 
-                          className="bg-green-500 h-2 rounded-full" 
+                          className="bg-success-color h-2 rounded-full" 
                           style={{ width: `${summaryData.subtopicsAnalysis[subtopic].correctPercentage}%` }}
                         ></div>
                       </div>
@@ -1641,7 +1878,7 @@ function MathsFlashApp() {
                   ))}
                 </ul>
               ) : (
-                <div className="text-gray-500 italic">
+                <div className="text-neutral-500 italic p-4 bg-neutral-50 rounded-xl border border-neutral-200">
                   {summaryData.totalAttempted > 0 
                     ? "Keep practicing to develop your strengths." 
                     : "No questions attempted yet."}
@@ -1651,23 +1888,23 @@ function MathsFlashApp() {
             
             {/* Areas to improve */}
             <div>
-              <h3 className="text-lg font-bold mb-3 flex items-center">
-                <BookOpen size={20} className="text-blue-500 mr-2" /> Areas to Improve
+              <h3 className="text-lg font-bold mb-4 flex items-center text-primary-dark font-poppins">
+                <BookOpen size={22} className="text-primary-color mr-2" /> Areas to Improve
               </h3>
               
               {summaryData.weaknesses.length > 0 ? (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {summaryData.weaknesses.map(subtopic => (
-                    <li key={subtopic} className="bg-red-50 p-3 rounded-md">
+                    <li key={subtopic} className="bg-error-light p-4 rounded-xl">
                       <div className="flex justify-between items-center">
                         <span className="font-medium">{subtopic}</span>
-                        <span className="text-red-600 font-medium">
+                        <span className="text-error-color font-bold">
                           {summaryData.subtopicsAnalysis[subtopic].correctPercentage}% correct
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div className="w-full bg-white rounded-full h-2 mt-3">
                         <div 
-                          className="bg-red-500 h-2 rounded-full" 
+                          className="bg-error-color h-2 rounded-full" 
                           style={{ width: `${summaryData.subtopicsAnalysis[subtopic].correctPercentage}%` }}
                         ></div>
                       </div>
@@ -1675,7 +1912,7 @@ function MathsFlashApp() {
                   ))}
                 </ul>
               ) : (
-                <div className="text-gray-500 italic">
+                <div className="text-neutral-500 italic p-4 bg-neutral-50 rounded-xl border border-neutral-200">
                   {summaryData.totalAttempted > 0 
                     ? "Great job! No significant weak areas identified." 
                     : "No questions attempted yet."}
@@ -1685,15 +1922,15 @@ function MathsFlashApp() {
           </div>
           
           {/* Recommendations */}
-          <div className="p-6 bg-gray-50 border-t">
-            <h3 className="text-lg font-bold mb-3">Recommended Next Steps</h3>
+          <div className="p-8 bg-neutral-50 border-t">
+            <h3 className="text-lg font-bold mb-4 text-primary-dark font-poppins">Recommended Next Steps</h3>
             
             {summaryData.recommendedTopics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {summaryData.recommendedTopics.map(topic => (
                   <div 
                     key={topic.id}
-                    className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow"
+                    className="topic-card bg-white rounded-xl shadow-sm p-5 border-l-4 border-primary-color cursor-pointer hover:shadow-md transition-all"
                     onClick={() => {
                       const fullTopic = topics.find(t => t.id === topic.id);
                       if (fullTopic) {
@@ -1701,33 +1938,33 @@ function MathsFlashApp() {
                       }
                     }}
                   >
-                    <div className="flex items-center mb-2">
-                      <div className="text-blue-500 mr-2">
+                    <div className="flex items-center mb-3">
+                      <div className="text-primary-color mr-3">
                         {topicIcons[topic.icon]}
                       </div>
-                      <h4 className="font-semibold">{topic.title}</h4>
+                      <h4 className="font-semibold font-poppins">{topic.title}</h4>
                     </div>
-                    <p className="text-sm text-gray-600">{topic.reason}</p>
+                    <p className="text-sm text-neutral-600">{topic.reason}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-gray-500 italic">
+              <div className="text-neutral-500 italic p-4 bg-white rounded-xl border border-neutral-200">
                 No specific recommendations at this time.
               </div>
             )}
           </div>
           
           {/* Action buttons */}
-          <div className="p-6 flex justify-between border-t">
+          <div className="p-8 flex justify-between border-t">
             <button 
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className="px-6 py-3 btn btn-neutral rounded-lg font-medium"
               onClick={goToTopics}
             >
               Return to Topics
             </button>
             <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="px-6 py-3 btn btn-primary rounded-lg font-medium"
               onClick={() => {
                 selectTopic(currentTopic); // Restart the same topic
               }}
@@ -1744,74 +1981,99 @@ function MathsFlashApp() {
     if (!editingCard) return null;
     
     return (
-      <div className="p-4 max-w-2xl mx-auto">
-        <h2 className="text-xl font-bold mb-6">
+      <div className="p-6 max-w-2xl mx-auto">
+        <h2 className="text-2xl font-bold mb-8 text-primary-dark text-center font-poppins">
           {editingCard.id ? 'Edit Card' : 'Create New Card'}
         </h2>
         
-        <div className="space-y-6">
+        <div className="bg-white p-6 rounded-xl shadow-md space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Question</label>
             <textarea
               value={editingCard.question || ''}
               onChange={(e) => setEditingCard({...editingCard, question: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               rows={3}
+              placeholder="Enter your question"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subtopic/Category</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Subtopic/Category</label>
             <input
               type="text"
               value={editingCard.subtopic || 'General'}
               onChange={(e) => setEditingCard({...editingCard, subtopic: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               placeholder="e.g. Algebra, Fractions, Linear Equations"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-neutral-500 mt-1">
               Group similar questions together for better performance tracking
             </p>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Question Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e, true)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-            {editingCard.imageUrl && (
-              <div className="mt-2 p-2 border rounded-md bg-gray-50">
-                <p className="text-xs text-gray-500 mb-1">Image Preview:</p>
-                <img src={editingCard.imageUrl} alt="Preview" className="max-h-32" />
-              </div>
-            )}
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Question Image (optional)</label>
+            <div className="flex flex-col items-center p-4 border-2 border-dashed border-neutral-300 rounded-lg bg-neutral-50">
+              <Image size={24} className="text-neutral-400 mb-2" />
+              <p className="text-sm text-neutral-500 mb-3 text-center">Upload an image to illustrate the question</p>
+              
+              <input
+                type="file"
+                accept="image/*"
+                id="question-image"
+                className="hidden"
+                onChange={(e) => handleImageUpload(e, true)}
+              />
+              
+              <label
+                htmlFor="question-image"
+                className="btn btn-primary px-4 py-2 rounded-lg"
+              >
+                {editingCard.imageUrl ? 'Change Image' : 'Choose Image'}
+              </label>
+              
+              {editingCard.imageUrl && (
+                <div className="mt-4 border rounded-lg p-3 w-full bg-white">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs text-neutral-500">Image Preview:</p>
+                    <button 
+                      className="text-xs text-error-color hover:text-red-700"
+                      onClick={() => setEditingCard({...editingCard, imageUrl: ''})}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <img src={editingCard.imageUrl} alt="Preview" className="max-h-32 mx-auto object-contain rounded-md" />
+                </div>
+              )}
+            </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hint</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Hint (optional)</label>
             <textarea
               value={editingCard.hint || ''}
               onChange={(e) => setEditingCard({...editingCard, hint: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               rows={2}
+              placeholder="Provide a hint to help solve the problem"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Answer</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Answer</label>
             <textarea
               value={editingCard.answer || ''}
               onChange={(e) => setEditingCard({...editingCard, answer: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               rows={2}
+              placeholder="The correct answer"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
               Acceptable Answers (comma separated, optional)
             </label>
             <textarea
@@ -1823,55 +2085,78 @@ function MathsFlashApp() {
                   .filter(a => a);
                 setEditingCard({...editingCard, acceptableAnswers: answers});
               }}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               rows={2}
               placeholder="e.g. 4, x=4, x = 4"
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-neutral-500 mt-1">
               List alternative correct answers here. The main answer will be added automatically.
             </p>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Answer Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e, false)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-            {editingCard.answerImageUrl && (
-              <div className="mt-2 p-2 border rounded-md bg-gray-50">
-                <p className="text-xs text-gray-500 mb-1">Image Preview:</p>
-                <img src={editingCard.answerImageUrl} alt="Preview" className="max-h-32" />
-              </div>
-            )}
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Answer Image (optional)</label>
+            <div className="flex flex-col items-center p-4 border-2 border-dashed border-neutral-300 rounded-lg bg-neutral-50">
+              <Image size={24} className="text-neutral-400 mb-2" />
+              <p className="text-sm text-neutral-500 mb-3 text-center">Upload an image to illustrate the answer</p>
+              
+              <input
+                type="file"
+                accept="image/*"
+                id="answer-image"
+                className="hidden"
+                onChange={(e) => handleImageUpload(e, false)}
+              />
+              
+              <label
+                htmlFor="answer-image"
+                className="btn btn-primary px-4 py-2 rounded-lg"
+              >
+                {editingCard.answerImageUrl ? 'Change Image' : 'Choose Image'}
+              </label>
+              
+              {editingCard.answerImageUrl && (
+                <div className="mt-4 border rounded-lg p-3 w-full bg-white">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs text-neutral-500">Image Preview:</p>
+                    <button 
+                      className="text-xs text-error-color hover:text-red-700"
+                      onClick={() => setEditingCard({...editingCard, answerImageUrl: ''})}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <img src={editingCard.answerImageUrl} alt="Preview" className="max-h-32 mx-auto object-contain rounded-md" />
+                </div>
+              )}
+            </div>
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Solution/Explanation</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Solution/Explanation (optional)</label>
             <textarea
               value={editingCard.explanation || ''}
               onChange={(e) => setEditingCard({...editingCard, explanation: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               rows={4}
+              placeholder="Explain how to solve the problem step by step"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Video URL</label>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Video URL (optional)</label>
             <input
               type="text"
               value={editingCard.videoUrl || ''}
               onChange={(e) => setEditingCard({...editingCard, videoUrl: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
             />
           </div>
           
-          <div className="flex justify-between pt-4">
+          <div className="flex justify-between pt-6">
             <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className="px-6 py-3 btn btn-neutral rounded-lg font-medium"
               onClick={() => {
                 setEditingCard(null);
                 setView('cards');
@@ -1881,7 +2166,7 @@ function MathsFlashApp() {
             </button>
             
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="px-6 py-3 btn btn-primary rounded-lg font-medium"
               onClick={saveCard}
             >
               Save Card
@@ -1894,20 +2179,23 @@ function MathsFlashApp() {
   
   function renderLogin() {
     return (
-      <div className="flex items-center justify-center min-h-64 p-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-          <div className="flex items-center justify-center mb-6">
-            <h2 className="text-xl font-bold">Teacher Login</h2>
+      <div className="flex items-center justify-center min-h-[60vh] p-6">
+        <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-md">
+          <div className="flex flex-col items-center justify-center mb-8">
+            <div className="bg-primary-color/10 rounded-full p-4 mb-4">
+              <Calculator size={32} className="text-primary-color" />
+            </div>
+            <h2 className="text-2xl font-bold text-primary-dark font-poppins">Teacher Login</h2>
           </div>
           
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-neutral-700 mb-2">Password</label>
             <input
               ref={passwordInputRef}
               type="password"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
               placeholder="Enter teacher password"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -1917,20 +2205,20 @@ function MathsFlashApp() {
               }}
             />
             {passwordError && (
-              <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+              <p className="text-error-color text-sm mt-2">{passwordError}</p>
             )}
           </div>
           
-          <div className="flex justify-between items-center pt-2">
+          <div className="flex justify-between items-center pt-4">
             <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className="px-6 py-3 btn btn-neutral rounded-lg font-medium"
               onClick={() => setView('topics')}
             >
               Cancel
             </button>
             
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className="px-6 py-3 btn btn-primary rounded-lg font-medium"
               onClick={login}
             >
               Login
@@ -1943,15 +2231,15 @@ function MathsFlashApp() {
   
   function renderImport() {
     return (
-      <div className="p-4 max-w-3xl mx-auto">
-        <h2 className="text-xl font-bold mb-6">
+      <div className="p-6 max-w-3xl mx-auto">
+        <h2 className="text-2xl font-bold mb-8 text-primary-dark text-center font-poppins">
           Import Questions from Excel for "{currentTopic?.title}"
         </h2>
         
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-xl shadow-md p-6">
           {!sheetData ? (
             <div className="space-y-6">
-              <div className="text-gray-700">
+              <div className="text-neutral-700">
                 <p className="mb-4">Upload an Excel file (.xlsx, .xls) containing your questions and answers.</p>
                 <p className="mb-2">Your spreadsheet should include:</p>
                 <ul className="list-disc pl-5 mb-4 space-y-1">
@@ -2209,312 +2497,3 @@ function MathsFlashApp() {
       </div>
     );
   }
-  
-  // Main render
-  return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col">
-      {renderHeader()}
-      <main className="flex-1">
-        {view === 'topics' && renderTopics()}
-        {view === 'cards' && renderCards()}
-        {view === 'login' && renderLogin()}
-        {view === 'edit' && renderCardEditor()}
-        {view === 'newTopic' && renderNewTopic()}
-        {view === 'editTopic' && renderEditTopic()}
-        {view === 'import' && renderImport()}
-        {view === 'summary' && renderSummary()}
-      </main>
-    </div>
-  );
-}
-
-const App = () => {
-  return (
-    <div className="h-screen w-full">
-      <MathsFlashApp />
-    </div>
-  );
-};
-
-export default App;Question", "Answer", etc.)</li>
-                  <li><strong>Required:</strong> Columns for questions and answers</li>
-                  <li><strong>Optional:</strong> Columns for hints, explanations, acceptable alternative answers, subtopics, and video URLs</li>
-                </ul>
-              </div>
-              
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <div className="text-gray-500 mb-4">
-                  <Upload size={40} className="mx-auto mb-2" />
-                  <p>Drag and drop your Excel file here, or click to browse</p>
-                </div>
-                
-                <input
-                  type="file"
-                  id="excel-upload"
-                  accept=".xlsx, .xls"
-                  className="hidden"
-                  onChange={handleExcelUpload}
-                />
-                
-                <label
-                  htmlFor="excel-upload"
-                  className="inline-block px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
-                >
-                  Select Excel File
-                </label>
-              </div>
-              
-              {importError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md">
-                  {importError}
-                </div>
-              )}
-              
-              <div className="flex justify-between pt-4">
-                <button
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  onClick={() => setView('cards')}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="border-b pb-4 mb-4">
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <FileSpreadsheet size={16} className="mr-1" />
-                  <span>{importFile.name}</span>
-                </div>
-                <p className="font-medium">Found {sheetData.rows.length} rows of data. Please map your columns below:</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Question Column <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={columnMappings.question}
-                      onChange={(e) => setColumnMappings({...columnMappings, question: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Answer Column <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={columnMappings.answer}
-                      onChange={(e) => setColumnMappings({...columnMappings, answer: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hint Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.hint}
-                      onChange={(e) => setColumnMappings({...columnMappings, hint: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Subtopic/Category Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.subtopic}
-                      onChange={(e) => setColumnMappings({...columnMappings, subtopic: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Explanation/Solution Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.explanation}
-                      onChange={(e) => setColumnMappings({...columnMappings, explanation: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Acceptable Answers Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.acceptableAnswers}
-                      onChange={(e) => setColumnMappings({...columnMappings, acceptableAnswers: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      This can be a comma-separated list of alternate answers
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Video URL Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.videoUrl}
-                      onChange={(e) => setColumnMappings({...columnMappings, videoUrl: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Preview section */}
-              {columnMappings.question !== '' && columnMappings.answer !== '' && (
-                <div className="mt-4 border rounded-md overflow-hidden">
-                  <div className="bg-gray-50 p-3 border-b">
-                    <h3 className="font-medium">Data Preview</h3>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Question
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Answer
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {columnMappings.subtopic !== '' ? 'Subtopic' : 'Hint'}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {sheetData.rows.slice(0, 3).map((row, rowIndex) => (
-                          <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-4 py-2 text-sm whitespace-normal">
-                              {columnMappings.question !== '' ? row[columnMappings.question] || 'N/A' : 'Not mapped'}
-                            </td>
-                            <td className="px-4 py-2 text-sm">
-                              {columnMappings.answer !== '' ? row[columnMappings.answer] || 'N/A' : 'Not mapped'}
-                            </td>
-                            <td className="px-4 py-2 text-sm">
-                              {columnMappings.subtopic !== '' 
-                                ? (row[columnMappings.subtopic] || 'General') 
-                                : (columnMappings.hint !== '' ? row[columnMappings.hint] || 'N/A' : 'Not mapped')}
-                            </td>
-                          </tr>
-                        ))}
-                        {sheetData.rows.length > 3 && (
-                          <tr>
-                            <td colSpan="3" className="px-4 py-2 text-sm text-gray-500 text-center">
-                              Showing 3 of {sheetData.rows.length} rows
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-              
-              {importError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md">
-                  {importError}
-                </div>
-              )}
-              
-              <div className="flex justify-between pt-4">
-                <button
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  onClick={cancelImport}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center"
-                  onClick={importCards}
-                  disabled={columnMappings.question === '' || columnMappings.answer === ''}
-                >
-                  <Upload size={18} className="mr-1" />
-                  Import Cards
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-  
-  // Main render
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {renderHeader()}
-      <main className="flex-1">
-        {view === 'topics' && renderTopics()}
-        {view === 'cards' && renderCards()}
-        {view === 'login' && renderLogin()}
-        {view === 'edit' && renderCardEditor()}
-        {view === 'newTopic' && renderNewTopic()}
-        {view === 'editTopic' && renderEditTopic()}
-        {view === 'import' && renderImport()}
-        {view === 'summary' && renderSummary()}
-      </main>
-    </div>
-  );
-}
-
-const App = () => {
-  return (
-    <div className="h-screen w-full">
-      <MathsFlashApp />
-    </div>
-  );
-};
-
-export default App;
