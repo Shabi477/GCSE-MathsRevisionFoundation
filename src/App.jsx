@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+mport React, { useState, useEffect, useRef } from 'react';
 import { Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, FileSpreadsheet, BarChart, Award, BookOpen, Image } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './MathsFlash.css';
