@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Circle, Brain, PenLine, Atom, ChevronRight, Plus, Check, X, Upload, FileSpreadsheet, BarChart, Award, BookOpen } from 'lucide-react';
+import { Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, FileSpreadsheet, BarChart, Award, BookOpen, Image } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './MathsFlash.css';
 
@@ -15,6 +15,7 @@ function MathsFlashApp() {
   const [passwordError, setPasswordError] = useState('');
   const [newTopicName, setNewTopicName] = useState('');
   const [selectedIcon, setSelectedIcon] = useState('calculator');
+  const [topicImageUrl, setTopicImageUrl] = useState(''); // New state for topic image
   const [studentAnswer, setStudentAnswer] = useState('');
   const [answerStatus, setAnswerStatus] = useState(null); // null, 'correct', or 'incorrect'
   const passwordInputRef = useRef(null);
@@ -53,9 +54,9 @@ function MathsFlashApp() {
   const topicIcons = {
     calculator: <Calculator size={24} />,
     circle: <Circle size={24} />,
-    brain: <Brain size={24} />,
+    triangle: <Triangle size={24} />,
     penLine: <PenLine size={24} />,
-    atom: <Atom size={24} />
+    table: <Table size={24} />
   };
   
   // Topics and cards
@@ -64,6 +65,7 @@ function MathsFlashApp() {
       id: 1, 
       title: 'Algebra',
       icon: 'calculator',
+      imageUrl: '', // Added imageUrl property
       cards: [
         {
           id: 1,
@@ -95,6 +97,7 @@ function MathsFlashApp() {
       id: 2, 
       title: 'Geometry',
       icon: 'circle',
+      imageUrl: '', // Added imageUrl property
       cards: [
         {
           id: 1,
@@ -114,6 +117,7 @@ function MathsFlashApp() {
       id: 3, 
       title: 'Physics',
       icon: 'atom',
+      imageUrl: '', // Added imageUrl property
       cards: [
         {
           id: 1,
@@ -214,6 +218,46 @@ function MathsFlashApp() {
       }
     };
     reader.readAsDataURL(file);
+  }
+  
+  // Topic image upload handler
+  function handleTopicImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setTopicImageUrl(e.target.result);
+    };
+    reader.readAsDataURL(file);
+  }
+  
+  // Function to edit topic (new function)
+  function editTopic(topic) {
+    setNewTopicName(topic.title);
+    setSelectedIcon(topic.icon);
+    setTopicImageUrl(topic.imageUrl || '');
+    setView('editTopic');
+  }
+  
+  // Function to save edited topic (new function)
+  function saveEditedTopic(topicId) {
+    if (!newTopicName.trim()) {
+      alert("Please enter a topic name");
+      return;
+    }
+    
+    const updatedTopics = topics.map(topic => 
+      topic.id === topicId 
+        ? { ...topic, title: newTopicName, icon: selectedIcon, imageUrl: topicImageUrl }
+        : topic
+    );
+    
+    setTopics(updatedTopics);
+    setNewTopicName('');
+    setSelectedIcon('calculator');
+    setTopicImageUrl('');
+    setView('topics');
   }
   
   // Excel import functions
@@ -630,11 +674,14 @@ function MathsFlashApp() {
       id: Date.now(),
       title: newTopicName,
       icon: selectedIcon,
+      imageUrl: topicImageUrl, // Include the topic image URL
       cards: []
     };
     
     setTopics([...topics, newTopic]);
     setNewTopicName('');
+    setSelectedIcon('calculator');
+    setTopicImageUrl(''); // Reset the topic image URL
     setView('topics');
   }
   
@@ -914,7 +961,7 @@ function MathsFlashApp() {
   function renderTopics() {
     return (
       <div className="p-4">
-        <h2 className="text-2xl font-bold text-center mb-6">Maths Topics</h2>
+        <h2 className="text-2xl font-bold text-center mb-6">Foundation Maths Topics</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {topics.map(topic => (
             <div 
@@ -922,6 +969,16 @@ function MathsFlashApp() {
               className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow"
               onClick={() => selectTopic(topic)}
             >
+              {/* Display topic image if available */}
+              {topic.imageUrl && (
+                <div className="mb-3 flex justify-center">
+                  <img 
+                    src={topic.imageUrl} 
+                    alt={`${topic.title} visualization`} 
+                    className="h-32 rounded-md object-contain"
+                  />
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
                   <div className="text-blue-500">
@@ -962,6 +1019,21 @@ function MathsFlashApp() {
                   </div>
                 </div>
               )}
+              
+              {/* Edit topic button (only visible in teacher mode) */}
+              {mode === 'teacher' && (
+                <div className="mt-2 text-right">
+                  <button 
+                    className="text-gray-500 text-xs hover:text-blue-500"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering the parent onClick
+                      editTopic(topic);
+                    }}
+                  >
+                    Edit Topic
+                  </button>
+                </div>
+              )}
             </div>
           ))}
           
@@ -984,7 +1056,7 @@ function MathsFlashApp() {
   function renderNewTopic() {
     return (
       <div className="p-4 max-w-md mx-auto">
-        <h2 className="text-xl font-bold mb-6">Create New Maths Topic</h2>
+        <h2 className="text-xl font-bold mb-6">Create New Foundation Maths Topic</h2>
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name</label>
@@ -1014,10 +1086,49 @@ function MathsFlashApp() {
             </div>
           </div>
           
+          {/* New topic image upload section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Image (optional)</label>
+            <div className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-md bg-gray-50">
+              <Image size={24} className="text-gray-400 mb-2" />
+              <p className="text-sm text-gray-500 mb-3">Upload an image to visually represent this topic</p>
+              
+              <input
+                type="file"
+                accept="image/*"
+                id="topic-image-upload"
+                className="hidden"
+                onChange={handleTopicImageUpload}
+              />
+              
+              <label
+                htmlFor="topic-image-upload"
+                className="px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
+              >
+                Choose Image
+              </label>
+              
+              {/* Preview the selected image */}
+              {topicImageUrl && (
+                <div className="mt-4 border rounded p-2 w-full">
+                  <p className="text-xs text-gray-500 mb-2">Selected image:</p>
+                  <img 
+                    src={topicImageUrl} 
+                    alt="Topic preview" 
+                    className="mx-auto max-h-32 object-contain"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          
           <div className="flex justify-between pt-4">
             <button
               className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-              onClick={() => setView('topics')}
+              onClick={() => {
+                setView('topics');
+                setTopicImageUrl(''); // Clear the image state
+              }}
             >
               Cancel
             </button>
@@ -1026,6 +1137,110 @@ function MathsFlashApp() {
               onClick={saveNewTopic}
             >
               Create Topic
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // New function to render edit topic view
+  function renderEditTopic() {
+    const topicToEdit = topics.find(t => t.title === newTopicName);
+    
+    return (
+      <div className="p-4 max-w-md mx-auto">
+        <h2 className="text-xl font-bold mb-6">Edit Foundation Maths Topic</h2>
+        <div className="space-y-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name</label>
+            <input
+              type="text"
+              value={newTopicName}
+              onChange={(e) => setNewTopicName(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              autoFocus
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">Choose Icon</label>
+            <div className="grid grid-cols-3 gap-3">
+              {Object.entries(topicIcons).map(([key, icon]) => (
+                <div 
+                  key={key}
+                  onClick={() => setSelectedIcon(key)}
+                  className={`flex items-center justify-center p-3 rounded-md cursor-pointer border-2 ${selectedIcon === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
+                >
+                  <div className={selectedIcon === key ? 'text-blue-500' : 'text-gray-600'}>
+                    {icon}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Topic image upload/edit section */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Image (optional)</label>
+            <div className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-md bg-gray-50">
+              <Image size={24} className="text-gray-400 mb-2" />
+              <p className="text-sm text-gray-500 mb-3">Upload an image to visually represent this topic</p>
+              
+              <input
+                type="file"
+                accept="image/*"
+                id="topic-image-edit"
+                className="hidden"
+                onChange={handleTopicImageUpload}
+              />
+              
+              <label
+                htmlFor="topic-image-edit"
+                className="px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
+              >
+                {topicImageUrl ? 'Change Image' : 'Choose Image'}
+              </label>
+              
+              {/* Preview the selected image */}
+              {topicImageUrl && (
+                <div className="mt-4 border rounded p-2 w-full">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs text-gray-500">Current image:</p>
+                    <button 
+                      className="text-xs text-red-500 hover:text-red-700"
+                      onClick={() => setTopicImageUrl('')}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <img 
+                    src={topicImageUrl} 
+                    alt="Topic preview" 
+                    className="mx-auto max-h-32 object-contain"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex justify-between pt-4">
+            <button
+              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              onClick={() => {
+                setView('topics');
+                setNewTopicName('');
+                setSelectedIcon('calculator');
+                setTopicImageUrl('');
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              onClick={() => saveEditedTopic(topicToEdit.id)}
+            >
+              Save Changes
             </button>
           </div>
         </div>
@@ -2005,6 +2220,7 @@ function MathsFlashApp() {
         {view === 'login' && renderLogin()}
         {view === 'edit' && renderCardEditor()}
         {view === 'newTopic' && renderNewTopic()}
+        {view === 'editTopic' && renderEditTopic()}
         {view === 'import' && renderImport()}
         {view === 'summary' && renderSummary()}
       </main>
