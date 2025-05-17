@@ -1,4 +1,4 @@
-mport React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, FileSpreadsheet, BarChart, Award, BookOpen, Image } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './MathsFlash.css';
@@ -1956,6 +1956,287 @@ function MathsFlashApp() {
                 <p className="mb-2">Your spreadsheet should include:</p>
                 <ul className="list-disc pl-5 mb-4 space-y-1">
                   <li>A header row with column names (e.g., "Question", "Answer", etc.)</li>
+                  <li><strong>Required:</strong> Columns for questions and answers</li>
+                  <li><strong>Optional:</strong> Columns for hints, explanations, acceptable alternative answers, subtopics, and video URLs</li>
+                </ul>
+              </div>
+              
+              <div className="border-2 border-dashed border-neutral-300 rounded-xl p-8 text-center bg-neutral-50">
+                <div className="text-neutral-500 mb-6">
+                  <Upload size={40} className="mx-auto mb-3 text-primary-color" />
+                  <p>Drag and drop your Excel file here, or click to browse</p>
+                </div>
+                
+                <input
+                  type="file"
+                  id="excel-upload"
+                  accept=".xlsx, .xls"
+                  className="hidden"
+                  onChange={handleExcelUpload}
+                />
+                
+                <label
+                  htmlFor="excel-upload"
+                  className="inline-block px-5 py-3 btn btn-primary rounded-lg font-medium"
+                >
+                  Select Excel File
+                </label>
+              </div>
+              
+              {importError && (
+                <div className="p-4 bg-error-light border border-error-color text-error-color rounded-lg">
+                  {importError}
+                </div>
+              )}
+              
+              <div className="flex justify-between pt-4">
+                <button
+                  className="px-5 py-3 btn btn-neutral rounded-lg font-medium"
+                  onClick={() => setView('cards')}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div className="border-b pb-4 mb-4">
+                <div className="flex items-center text-sm text-neutral-500 mb-2">
+                  <FileSpreadsheet size={16} className="mr-2 text-primary-color" />
+                  <span>{importFile.name}</span>
+                </div>
+                <p className="font-medium">Found {sheetData.rows.length} rows of data. Please map your columns below:</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Question Column <span className="text-error-color">*</span>
+                    </label>
+                    <select
+                      value={columnMappings.question}
+                      onChange={(e) => setColumnMappings({...columnMappings, question: e.target.value})}
+                      className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                      required
+                    >
+                      <option value="">Select column</option>
+                      {sheetData.headers.map((header, index) => (
+                        <option key={index} value={index}>{header}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Answer Column <span className="text-error-color">*</span>
+                    </label>
+                    <select
+                      value={columnMappings.answer}
+                      onChange={(e) => setColumnMappings({...columnMappings, answer: e.target.value})}
+                      className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                      required
+                    >
+                      <option value="">Select column</option>
+                      {sheetData.headers.map((header, index) => (
+                        <option key={index} value={index}>{header}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Hint Column (optional)
+                    </label>
+                    <select
+                      value={columnMappings.hint}
+                      onChange={(e) => setColumnMappings({...columnMappings, hint: e.target.value})}
+                      className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                    >
+                      <option value="">Select column</option>
+                      {sheetData.headers.map((header, index) => (
+                        <option key={index} value={index}>{header}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Subtopic/Category Column (optional)
+                    </label>
+                    <select
+                      value={columnMappings.subtopic}
+                      onChange={(e) => setColumnMappings({...columnMappings, subtopic: e.target.value})}
+                      className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                    >
+                      <option value="">Select column</option>
+                      {sheetData.headers.map((header, index) => (
+                        <option key={index} value={index}>{header}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Explanation/Solution Column (optional)
+                    </label>
+                    <select
+                      value={columnMappings.explanation}
+                      onChange={(e) => setColumnMappings({...columnMappings, explanation: e.target.value})}
+                      className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                    >
+                      <option value="">Select column</option>
+                      {sheetData.headers.map((header, index) => (
+                        <option key={index} value={index}>{header}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Acceptable Answers Column (optional)
+                    </label>
+                    <select
+                      value={columnMappings.acceptableAnswers}
+                      onChange={(e) => setColumnMappings({...columnMappings, acceptableAnswers: e.target.value})}
+                      className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                    >
+                      <option value="">Select column</option>
+                      {sheetData.headers.map((header, index) => (
+                        <option key={index} value={index}>{header}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-neutral-500 mt-1">
+                      This can be a comma-separated list of alternate answers
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Video URL Column (optional)
+                    </label>
+                    <select
+                      value={columnMappings.videoUrl}
+                      onChange={(e) => setColumnMappings({...columnMappings, videoUrl: e.target.value})}
+                      className="input-field w-full p-3 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-light"
+                    >
+                      <option value="">Select column</option>
+                      {sheetData.headers.map((header, index) => (
+                        <option key={index} value={index}>{header}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Preview section */}
+              {columnMappings.question !== '' && columnMappings.answer !== '' && (
+                <div className="mt-6 border rounded-xl overflow-hidden shadow-sm">
+                  <div className="bg-neutral-50 p-4 border-b">
+                    <h3 className="font-semibold text-primary-dark">Data Preview</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-neutral-200">
+                      <thead className="bg-neutral-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Question
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            Answer
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                            {columnMappings.subtopic !== '' ? 'Subtopic' : 'Hint'}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-neutral-200">
+                        {sheetData.rows.slice(0, 3).map((row, rowIndex) => (
+                          <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}>
+                            <td className="px-4 py-3 text-sm whitespace-normal">
+                              {columnMappings.question !== '' ? row[columnMappings.question] || 'N/A' : 'Not mapped'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {columnMappings.answer !== '' ? row[columnMappings.answer] || 'N/A' : 'Not mapped'}
+                            </td>
+                            <td className="px-4 py-3 text-sm">
+                              {columnMappings.subtopic !== '' 
+                                ? (row[columnMappings.subtopic] || 'General') 
+                                : (columnMappings.hint !== '' ? row[columnMappings.hint] || 'N/A' : 'Not mapped')}
+                            </td>
+                          </tr>
+                        ))}
+                        {sheetData.rows.length > 3 && (
+                          <tr>
+                            <td colSpan="3" className="px-4 py-3 text-sm text-neutral-500 text-center">
+                              Showing 3 of {sheetData.rows.length} rows
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              
+              {importError && (
+                <div className="p-4 bg-error-light border border-error-color text-error-color rounded-lg">
+                  {importError}
+                </div>
+              )}
+              
+              <div className="flex justify-between pt-6">
+                <button
+                  className="px-5 py-3 btn btn-neutral rounded-lg font-medium"
+                  onClick={cancelImport}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="px-5 py-3 btn btn-success rounded-lg font-medium flex items-center"
+                  onClick={importCards}
+                  disabled={columnMappings.question === '' || columnMappings.answer === ''}
+                >
+                  <Upload size={18} className="mr-2" />
+                  Import Cards
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+  
+  // Main render
+  return (
+    <div className="min-h-screen bg-neutral-50 flex flex-col">
+      {renderHeader()}
+      <main className="flex-1">
+        {view === 'topics' && renderTopics()}
+        {view === 'cards' && renderCards()}
+        {view === 'login' && renderLogin()}
+        {view === 'edit' && renderCardEditor()}
+        {view === 'newTopic' && renderNewTopic()}
+        {view === 'editTopic' && renderEditTopic()}
+        {view === 'import' && renderImport()}
+        {view === 'summary' && renderSummary()}
+      </main>
+    </div>
+  );
+}
+
+const App = () => {
+  return (
+    <div className="h-screen w-full">
+      <MathsFlashApp />
+    </div>
+  );
+};
+
+export default App;Question", "Answer", etc.)</li>
                   <li><strong>Required:</strong> Columns for questions and answers</li>
                   <li><strong>Optional:</strong> Columns for hints, explanations, acceptable alternative answers, subtopics, and video URLs</li>
                 </ul>
