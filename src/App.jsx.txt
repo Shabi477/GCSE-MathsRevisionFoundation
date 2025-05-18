@@ -1,0 +1,903 @@
+﻿import React, { useState, useEffect, useRef } from 'react';
+import {
+  Calculator, Circle, Triangle, PenLine, Table,
+  ChevronRight, ChevronLeft, Plus, Check, X,
+  Upload, FileSpreadsheet, FileCheck, RefreshCw
+} from 'lucide-react';
+import * as XLSX from 'xlsx';
+import './MathsFlash.css';
+
+function MathsFlashApp() {
+  // Basic state
+  const [mode, setMode] = useState('student');
+  const [view, setView] = useState('topics');
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [showHint, setShowHint] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
+  const [password] = useState('teacher123');
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [newTopicName, setNewTopicName] = useState('');
+  const [selectedIcon, setSelectedIcon] = useState('calculator');
+  const [topicImageUrl, setTopicImageUrl] = useState('');
+  const [studentAnswer, setStudentAnswer] = useState('');
+  const [answerStatus, setAnswerStatus] = useState(null);
+  const passwordInputRef = useRef(null);
+  const answerInputRef = useRef(null);
+
+  // Performance tracking state
+  const [performanceData, setPerformanceData] = useState({});
+  const [summaryData, setSummaryData] = useState(null);
+
+  // Excel import state
+  const [importFile, setImportFile] = useState(null);
+  const [sheetData, setSheetData] = useState(null);
+  const [columnMappings, setColumnMappings] = useState({
+    question: '', answer: '', hint: '',
+    explanation: '', acceptableAnswers: '', videoUrl: '', subtopic: ''
+  });
+  const [importProgress, setImportProgress] = useState(0);
+  const [importError, setImportError] = useState('');
+
+  // Timer state
+  const [timer, setTimer] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+
+  // Stats state
+  const [stats, setStats] = useState({ correct: 0, incorrect: 0, skipped: 0 });
+
+  // Icons map
+  const topicIcons = {
+    calculator: <Calculator size={24} />,
+    circle:     <Circle size={24} />,
+    triangle:   <Triangle size={24} />,
+    penLine:    <PenLine size={24} />,
+    table:      <Table size={24} />,
+    sparkles:   <PenLine size={24} />, // example
+    brain:      <Calculator size={24} />, // example
+    star:       <Calculator size={24} />, // example
+    bookOpen:   <Calculator size={24} />, // example
+    bookOpenCheck: <Calculator size={24} />,
+    bookMarked: <Calculator size={24} />,
+  };
+
+  // Topics & cards
+  const [topics, setTopics] = useState([
+    {
+      id: 1, title: 'Algebra', icon: 'calculator', imageUrl: '',
+      cards: [
+        {
+          id: 1, question: 'Solve for x: 2x + 5 = 13',
+          hint: 'Subtract 5 then divide.', answer: 'x = 4',
+          acceptableAnswers: ['4','x=4','x = 4'], explanation:
+          '2x+5=13 → 2x=8 → x=4',
+          videoUrl: 'https://youtu.be/9DxrF6Ttws4',
+          imageUrl: '', answerImageUrl: '', subtopic: 'Linear Equations'
+        },
+        {
+          id: 2, question: 'Factor: x² - 9',
+          hint: 'Difference of squares', answer: '(x+3)(x-3)',
+          acceptableAnswers: ['(x+3)(x-3)','(x-3)(x+3)'],
+          explanation: 'a²−b²=(a+b)(a−b)', videoUrl: 'https://youtu.be/WDZMYixEzxs',
+          imageUrl: '', answerImageUrl: '', subtopic: 'Factoring'
+        }
+      ]
+    },
+    {
+      id: 2, title: 'Geometry', icon: 'circle', imageUrl: '',
+      cards: [
+        {
+          id: 1, question: 'Area of circle radius 5?', hint: 'A=πr²',
+          answer: '25π ≈ 78.54 cm²',
+          acceptableAnswers: ['25π','78.54','78.5'], explanation:
+          'A=π(5²)=25π', videoUrl: 'https://youtu.be/YokKp3pwVFc',
+          imageUrl: '', answerImageUrl: '', subtopic: 'Circles'
+        }
+      ]
+    },
+    {
+      id: 3, title: 'Physics', icon: 'calculator', imageUrl: '',
+      cards: [
+        {
+          id: 1, question: "Newton's 2nd Law?", hint: 'Force=mass×accel',
+          answer: 'F = ma', acceptableAnswers: ['F=ma','f=ma'],
+          explanation: 'F=ma', videoUrl: '', imageUrl: '',
+          answerImageUrl: '', subtopic: "Newton's Laws"
+        }
+      ]
+    }
+  ]);
+  const [currentTopic, setCurrentTopic] = useState(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+
+  // Initialize perf data
+  useEffect(() => {
+    const pd = {};
+    topics.forEach(t => {
+      pd[t.id] = { topicName: t.title, icon: t.icon, correct:0, incorrect:0, skipped:0, total:t.cards.length, subtopics:{} };
+      t.cards.forEach(c => {
+        const sub = c.subtopic||'General';
+        if (!pd[t.id].subtopics[sub]) pd[t.id].subtopics[sub]= {correct:0,incorrect:0,skipped:0,total:0};
+        pd[t.id].subtopics[sub].total++;
+      });
+    });
+    setPerformanceData(pd);
+  }, [topics]);
+
+  // Auto-focus inputs
+  useEffect(() => {
+    if (view==='login' && passwordInputRef.current) passwordInputRef.current.focus();
+  }, [view]);
+  useEffect(() => {
+    if (answerInputRef.current && !isFlipped && answerStatus===null) answerInputRef.current.focus();
+  }, [currentCardIndex, isFlipped, answerStatus]);
+
+  // Timer
+  useEffect(() => {
+    let iv;
+    if (timerActive) iv = setInterval(()=> setTimer(s=>s+1),1000);
+    return ()=> clearInterval(iv);
+  }, [timerActive]);
+  function formatTime(sec) {
+    const m=Math.floor(sec/60), s=sec%60;
+    return `${m<10?'0':''}${m}:${s<10?'0':''}${s}`;
+  }
+
+  // File/image uploads
+  function handleImageUpload(e, isQ) {
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload = ev => {
+      setEditingCard(ic=>({...ic, [isQ?'imageUrl':'answerImageUrl']:ev.target.result}));
+    };
+    r.readAsDataURL(f);
+  }
+  function handleTopicImageUpload(e) {
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload = ev => setTopicImageUrl(ev.target.result);
+    r.readAsDataURL(f);
+  }
+
+  // Topic editing
+  function editTopic(t) {
+    setNewTopicName(t.title);
+    setSelectedIcon(t.icon);
+    setTopicImageUrl(t.imageUrl||'');
+    setView('editTopic');
+  }
+  function saveEditedTopic(id) {
+    if (!newTopicName.trim()) { alert('Enter topic name'); return; }
+    setTopics(ts=>ts.map(t=>t.id===id?{...t,title:newTopicName,icon:selectedIcon,imageUrl:topicImageUrl}:t));
+    setNewTopicName(''); setSelectedIcon('calculator'); setTopicImageUrl(''); setView('topics');
+  }
+
+  // Excel import
+  function handleExcelUpload(e) {
+    const f=e.target.files[0]; if(!f) return;
+    setImportFile(f);
+    const r=new FileReader();
+    r.onload = ev => {
+      try {
+        const data=new Uint8Array(ev.target.result);
+        const wb=XLSX.read(data,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const jd=XLSX.utils.sheet_to_json(ws,{header:1});
+        if(jd.length<2){ setImportError('Need header+data'); return;}
+        const headers=jd[0], rows=jd.slice(1);
+        setSheetData({headers,rows});
+        const m={...columnMappings};
+        headers.forEach((h,i)=>{
+          const hl=h.toString().toLowerCase();
+          if(hl.includes('question')) m.question=i;
+          else if(hl.includes('answer')&&!hl.includes('acceptable')) m.answer=i;
+          else if(hl.includes('hint')) m.hint=i;
+          else if(hl.includes('explan')||hl.includes('solution')) m.explanation=i;
+          else if(hl.includes('acceptable')||hl.includes('alt')) m.acceptableAnswers=i;
+          else if(hl.includes('video')||hl.includes('url')) m.videoUrl=i;
+          else if(hl.includes('subtopic')||hl.includes('category')) m.subtopic=i;
+        });
+        setColumnMappings(m); setImportError('');
+      } catch(err) {
+        console.error(err); setImportError('Invalid Excel');
+      }
+    };
+    r.onerror = ()=>setImportError('Read error');
+    r.readAsArrayBuffer(f);
+  }
+  function importCards() {
+    if(!currentTopic||!sheetData) return;
+    if(columnMappings.question===''||columnMappings.answer===''){
+      setImportError('Map Q&A'); return;
+    }
+    const newCards=[], errs=0;
+    sheetData.rows.forEach((row,idx)=>{
+      if(!row[columnMappings.question]||!row[columnMappings.answer]) return;
+      const q=row[columnMappings.question].toString(),
+            a=row[columnMappings.answer].toString(),
+            h=columnMappings.hint!==''?row[columnMappings.hint]||'':'',
+            ex=columnMappings.explanation!==''?row[columnMappings.explanation]||'':'',
+            vu=columnMappings.videoUrl!==''?row[columnMappings.videoUrl]||'':'',
+            sb=columnMappings.subtopic!==''?row[columnMappings.subtopic]||'General':'General';
+      let acc=[a];
+      if(columnMappings.acceptableAnswers!==''){
+        const alts=row[columnMappings.acceptableAnswers];
+        if(alts) acc=[...acc, ...alts.toString().split(',').map(s=>s.trim()).filter(s=>s&&s!==a)];
+      }
+      newCards.push({
+        id:Date.now()+idx, question:q, answer:a,
+        hint:h, explanation:ex, videoUrl:vu,
+        acceptableAnswers:acc, imageUrl:'', answerImageUrl:'', subtopic:sb
+      });
+      setImportProgress(Math.round((idx+1)/sheetData.rows.length*100));
+    });
+    if(newCards.length===0){ setImportError('No valid cards'); return; }
+    setTopics(ts=>{
+      const tIdx=ts.findIndex(t=>t.id===currentTopic.id);
+      if(tIdx!==-1){
+        ts[tIdx].cards=[...ts[tIdx].cards, ...newCards];
+      }
+      return [...ts];
+    });
+    const success=`Imported ${newCards.length} cards${errs>0?` (${errs} skipped)`:''}`;
+    alert(success);
+    setSheetData(null); setImportFile(null); setView('cards');
+  }
+  function cancelImport() {
+    setSheetData(null); setImportFile(null); setImportError(''); setView('cards');
+  }
+
+  // Auth
+  function login() {
+    if(passwordInput===password){
+      setMode('teacher'); setPasswordInput(''); setPasswordError(''); setView('topics');
+    } else setPasswordError('Incorrect password');
+  }
+
+  // Navigation
+  function goToTopics() {
+    setView('topics'); setCurrentTopic(null); setEditingCard(null); setSummaryData(null);
+  }
+  function selectTopic(t) {
+    setCurrentTopic(t); setCurrentCardIndex(0); setIsFlipped(false);
+    setShowHint(false); setStudentAnswer(''); setAnswerStatus(null);
+    setView('cards'); setSummaryData(null);
+    setStats({correct:0,incorrect:0,skipped:0});
+    setTimer(0); setTimerActive(true);
+  }
+  function nextCard() {
+    if(currentCardIndex<currentTopic.cards.length-1){
+      setCurrentCardIndex(i=>i+1); setIsFlipped(false); setShowHint(false);
+      setStudentAnswer(''); setAnswerStatus(null);
+    } else {
+      prepareSummaryData(); setView('summary'); setTimerActive(false);
+    }
+  }
+  function prevCard(){
+    if(currentCardIndex>0){
+      setCurrentCardIndex(i=>i-1); setIsFlipped(false);
+      setShowHint(false); setStudentAnswer(''); setAnswerStatus(null);
+    }
+  }
+
+  // Performance tracking
+  function updatePerformance(result, card){
+    if(!currentTopic) return;
+    const tid=currentTopic.id, sb=card.subtopic||'General';
+    setPerformanceData(pd=>{
+      const np={...pd};
+      if(!np[tid]) np[tid]={topicName:currentTopic.title,icon:currentTopic.icon,correct:0,incorrect:0,skipped:0,total:currentTopic.cards.length,subtopics:{}};
+      if(!np[tid].subtopics[sb]) np[tid].subtopics[sb]={correct:0,incorrect:0,skipped:0,total:0};
+      if(result==='correct'){np[tid].correct++; np[tid].subtopics[sb].correct++;}
+      else if(result==='incorrect'){np[tid].incorrect++; np[tid].subtopics[sb].incorrect++;}
+      else if(result==='skipped'){np[tid].skipped++; np[tid].subtopics[sb].skipped++;}
+      return np;
+    });
+  }
+
+  function prepareSummaryData(){
+    if(!currentTopic) return;
+    const td=performanceData[currentTopic.id]; if(!td) return;
+    const analysis={}, subs=Object.keys(td.subtopics);
+    subs.forEach(s=>{
+      const d=td.subtopics[s], att=d.correct+d.incorrect;
+      const pct=att>0?Math.round(d.correct/att*100):0;
+      analysis[s]={...d,correctPercentage:pct,attempted:att,needsWork:pct<70&&att>0};
+    });
+    const strengths=subs.filter(s=>analysis[s].correctPercentage>=85&&analysis[s].attempted>0)
+                       .sort((a,b)=>analysis[b].correctPercentage-analysis[a].correctPercentage);
+    const weaknesses=subs.filter(s=>analysis[s].needsWork)
+                        .sort((a,b)=>analysis[a].correctPercentage-analysis[b].correctPercentage);
+    const totalAtt=td.correct+td.incorrect;
+    const overallPct=totalAtt>0?Math.round(td.correct/totalAtt*100):0;
+    const recs=[];
+    if(weaknesses.length>0){
+      recs.push({id:currentTopic.id,title:currentTopic.title,icon:currentTopic.icon,reason:`Practice ${weaknesses[0]}`});
+    }
+    topics.forEach(t=>{
+      if(t.id!==currentTopic.id&&( !performanceData[t.id]||performanceData[t.id].correct+performanceData[t.id].incorrect===0 )){
+        recs.push({id:t.id,title:t.title,icon:t.icon,reason:"You haven't tried this topic yet"});
+      }
+    });
+    const grade=getGrade(overallPct);
+    setSummaryData({
+      topicName:currentTopic.title,icon:currentTopic.icon,
+      totalCards:currentTopic.cards.length,
+      totalAttempted:totalAtt,correct:td.correct,incorrect:td.incorrect,skipped:td.skipped,
+      overallCorrectPercentage:overallPct,timeTaken:timer,
+      subtopicsAnalysis:analysis,strengths,weaknesses,
+      recommendedTopics:recs,grade
+    });
+  }
+  function getGrade(p){
+    if(p>=90) return {letter:'A',comment:"Excellent!"};
+    if(p>=80) return {letter:'B',comment:"Very Good!"};
+    if(p>=70) return {letter:'C',comment:"Good"};
+    if(p>=60) return {letter:'D',comment:"Satisfactory"};
+    return {letter:'F',comment:"Needs Improvement"};
+  }
+
+  // Topic CRUD
+  function saveNewTopic(){
+    if(!newTopicName.trim()){alert('Enter name');return;}
+    setTopics(ts=>[...ts,{
+      id:Date.now(),title:newTopicName,icon:selectedIcon,imageUrl:topicImageUrl,cards:[]
+    }]);
+    setNewTopicName(''); setSelectedIcon('calculator'); setTopicImageUrl(''); setView('topics');
+  }
+  function createNewCard(){
+    if(!currentTopic){alert('Select topic first');return;}
+    setEditingCard({
+      id:Date.now(),question:'',answer:'',hint:'',acceptableAnswers:[],
+      explanation:'',videoUrl:'',imageUrl:'',answerImageUrl:'',subtopic:'General'
+    });
+    setView('edit');
+  }
+  function editCard(c){
+    setEditingCard({...c}); setView('edit');
+  }
+  function saveCard(){
+    if(!editingCard||!currentTopic) return;
+    if(!editingCard.question.trim()){alert('Question empty');return;}
+    if(!editingCard.answer.trim()){alert('Answer empty');return;}
+    let acc=editingCard.acceptableAnswers||[];
+    if(!acc.includes(editingCard.answer)) acc=[editingCard.answer,...acc];
+    const uc={...editingCard,acceptableAnswers:acc,subtopic:editingCard.subtopic||'General'};
+    setTopics(ts=>{
+      const tIdx=ts.findIndex(t=>t.id===currentTopic.id);
+      const existing=ts[tIdx].cards.findIndex(c=>c.id===editingCard.id);
+      if(existing!==-1) ts[tIdx].cards[existing]=uc; else ts[tIdx].cards.push(uc);
+      return [...ts];
+    });
+    // update perf data totals
+    setPerformanceData(pd=>{
+      const np={...pd};
+      np[currentTopic.id].total = topics.find(t=>t.id===currentTopic.id).cards.length;
+      const sb=uc.subtopic;
+      if(!np[currentTopic.id].subtopics[sb]) np[currentTopic.id].subtopics[sb]={correct:0,incorrect:0,skipped:0,total:0};
+      if(topics.find(t=>t.id===currentTopic.id).cards.findIndex(c=>c.id===editingCard.id)===-1){
+        np[currentTopic.id].subtopics[sb].total++;
+      }
+      return np;
+    });
+    setView('cards'); setEditingCard(null);
+  }
+  function deleteCard(cardId){
+    if(!currentTopic) return;
+    if(!window.confirm('Delete this card?')) return;
+    setTopics(ts=>{
+      const tIdx=ts.findIndex(t=>t.id===currentTopic.id);
+      ts[tIdx].cards=ts[tIdx].cards.filter(c=>c.id!==cardId);
+      return [...ts];
+    });
+    setPerformanceData(pd=>{
+      const np={...pd};
+      np[currentTopic.id].total--;
+      return np;
+    });
+    if(currentTopic.cards.length-1===0) setView('topics');
+    else if(currentCardIndex>=currentTopic.cards.length-1) setCurrentCardIndex(i=>i-1);
+  }
+
+  // Flashcard interaction
+  function toggleHint(){ setShowHint(h=>!h); }
+  function toggleFlip(){ setIsFlipped(f=>!f); }
+  function checkAnswer(){
+    if(!studentAnswer.trim()){alert('Enter answer');return;}
+    const card=currentTopic.cards[currentCardIndex];
+    const correct = card.acceptableAnswers.some(a=>a.toLowerCase()===studentAnswer.trim().toLowerCase());
+    setAnswerStatus(correct?'correct':'incorrect');
+    setStats(s=>({
+      ...s,
+      correct:     correct?s.correct+1:s.correct,
+      incorrect: !correct?s.incorrect+1:s.incorrect
+    }));
+    updatePerformance(correct?'correct':'incorrect',card);
+  }
+  function handleSubmit(e){
+    e.preventDefault();
+    answerStatus===null?checkAnswer():toggleFlip();
+  }
+  function resetCard(){ setStudentAnswer(''); setAnswerStatus(null); if(isFlipped) toggleFlip(); }
+  function skipCard(){
+    setStats(s=>({...s,skipped:s.skipped+1}));
+    const card=currentTopic.cards[currentCardIndex];
+    updatePerformance('skipped',card);
+    nextCard();
+  }
+  function resetStats(){ setStats({correct:0,incorrect:0,skipped:0}); setTimer(0); }
+  function toggleTimer(){ setTimerActive(a=>!a); }
+
+  // Confirmation dialog omitted for brevity — uses window.confirm above.
+
+  // **** RENDER FUNCTIONS ****
+
+  function renderHeader(){
+    return (
+      <header className={`sticky top-0 z-10 ${mode==='teacher'?'bg-yellow-600':'bg-gradient-to-r from-blue-600 to-indigo-700'} text-white p-4 flex justify-between`}>
+        <h1 className="text-2xl font-bold cursor-pointer" onClick={goToTopics}>
+          🧠 MathsFlash
+        </h1>
+        <div>
+          {mode==='teacher'&&<span className="mr-4 px-3 py-1 bg-yellow-400 rounded-full">Teacher Mode</span>}
+          <button onClick={()=>{mode==='teacher'?setMode('student'):setView('login');}} className="px-3 py-1 bg-white bg-opacity-20 rounded">
+            {mode==='teacher'?'Student View':'Teacher Login'}
+          </button>
+        </div>
+      </header>
+    );
+  }
+
+  function renderTopics(){
+    return (
+      <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {topics.map(topic=>(
+          <div key={topic.id}
+               className="bg-white shadow rounded-lg overflow-hidden cursor-pointer"
+               onClick={()=>selectTopic(topic)}>
+            <div className="p-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white flex justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white bg-opacity-20 rounded-full">{topicIcons[topic.icon]}</div>
+                <h3 className="text-xl">{topic.title}</h3>
+              </div>
+              <div className="flex items-center space-x-1">
+                <span className="px-2 py-1 bg-white bg-opacity-20 rounded-full text-sm">{topic.cards.length} cards</span>
+                <ChevronRight size={16} />
+              </div>
+            </div>
+            {topic.imageUrl&&(
+              <img src={topic.imageUrl} alt={topic.title} className="w-full h-32 object-cover"/>
+            )}
+            <div className="p-4">
+              {mode==='teacher'&&(
+                <button className="text-blue-500 text-sm" onClick={e=>{e.stopPropagation();editTopic(topic);}}>
+                  Edit Topic
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+        {mode==='teacher'&&(
+          <div className="flex items-center justify-center border-2 border-dashed rounded-lg p-6 cursor-pointer"
+               onClick={()=>setView('newTopic')}>
+            <Plus size={32} className="text-gray-400"/>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderNewTopic(){
+    return (
+      <div className="p-6 max-w-md mx-auto bg-white shadow rounded-lg space-y-6">
+        <h2 className="text-2xl">Create New Topic</h2>
+        <input type="text" value={newTopicName} placeholder="Topic name"
+               onChange={e=>setNewTopicName(e.target.value)}
+               className="w-full border p-2 rounded"/>
+        <div className="grid grid-cols-4 gap-2">
+          {Object.entries(topicIcons).map(([key,icon])=>(
+            <div key={key}
+                 className={`p-2 border ${selectedIcon===key?'border-blue-500 bg-blue-50':'border-gray-300'} rounded cursor-pointer text-center`}
+                 onClick={()=>setSelectedIcon(key)}>
+              {icon}
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <p>Optional Topic Image</p>
+          <input type="file" accept="image/*" onChange={handleTopicImageUpload}/>
+          {topicImageUrl&&<img src={topicImageUrl} alt="Preview" className="h-32 object-contain"/>}
+        </div>
+        <div className="flex justify-end space-x-4">
+          <button onClick={()=>setView('topics')} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+          <button onClick={saveNewTopic} className="px-4 py-2 bg-blue-500 text-white rounded">Create</button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderEditTopic(){
+    const t = topics.find(t=>t.title===newTopicName);
+    return (
+      <div className="p-6 max-w-md mx-auto bg-white shadow rounded-lg space-y-6">
+        <h2 className="text-2xl">Edit Topic</h2>
+        <input type="text" value={newTopicName} placeholder="Topic name"
+               onChange={e=>setNewTopicName(e.target.value)}
+               className="w-full border p-2 rounded"/>
+        <div className="grid grid-cols-4 gap-2">
+          {Object.entries(topicIcons).map(([key,icon])=>(
+            <div key={key}
+                 className={`p-2 border ${selectedIcon===key?'border-blue-500 bg-blue-50':'border-gray-300'} rounded cursor-pointer text-center`}
+                 onClick={()=>setSelectedIcon(key)}>
+              {icon}
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          <p>Topic Image</p>
+          <input type="file" accept="image/*" onChange={handleTopicImageUpload}/>
+          {topicImageUrl&&(
+            <div className="flex justify-between">
+              <img src={topicImageUrl} alt="Preview" className="h-32 object-contain"/>
+              <button onClick={()=>setTopicImageUrl('')} className="text-red-500">Remove</button>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end space-x-4">
+          <button onClick={()=>{setView('topics');setNewTopicName('');setTopicImageUrl('');}} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+          <button onClick={()=>saveEditedTopic(t.id)} className="px-4 py-2 bg-blue-500 text-white rounded">Save</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ← Here is the complete, corrected renderCards:
+  function renderCards() {
+    // Empty state:
+    if (!currentTopic || !currentTopic.cards || currentTopic.cards.length === 0) {
+      return (
+        <div className={`flex flex-col items-center justify-center p-16 ${mode==='teacher'?'bg-gray-50':''}`}>
+          <div className="text-gray-500 text-xl mb-6">
+            No cards available for this topic.
+          </div>
+          {mode === 'teacher' && (
+            <button
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg"
+              onClick={createNewCard}
+            >
+              <Plus size={20} className="mr-2" />
+              Create First Card
+            </button>
+          )}
+        </div>
+      );
+    }
+    // Otherwise show the flashcard:
+    const card = currentTopic.cards[currentCardIndex];
+
+    return (
+      <div className={`p-4 ${mode==='teacher'?'bg-white':''}`}>
+        {/* Stats & timer */}
+        <div className="bg-white shadow rounded-lg p-4 mb-6 flex justify-between items-center">
+          <div className="flex space-x-4">
+            <div className="text-green-600">✓ {stats.correct}</div>
+            <div className="text-red-600">✗ {stats.incorrect}</div>
+            <div className="text-gray-600">⟳ {stats.skipped}</div>
+          </div>
+          <div className="flex space-x-2 items-center">
+            <div className="font-mono">{formatTime(timer)}</div>
+            <button
+              className={`px-2 py-1 rounded ${timerActive?'bg-red-500':'bg-green-500'} text-white`}
+              onClick={toggleTimer}
+            >
+              {timerActive?'Pause':'Start'}
+            </button>
+            <button className="px-2 py-1 bg-gray-200 rounded" onClick={resetStats}>
+              Reset
+            </button>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center space-x-3">
+            <button onClick={goToTopics} className="px-2 py-1 bg-gray-200 rounded">Topics</button>
+            <div className="p-2 bg-blue-100 rounded">{topicIcons[currentTopic.icon]}</div>
+            <h2 className="text-xl font-bold">{currentTopic.title}</h2>
+          </div>
+          <div>Card {currentCardIndex+1} of {currentTopic.cards.length}</div>
+        </div>
+
+        {/* Flip container */}
+        <div className="perspective-1000 mb-6" style={{ height:'24rem' }}>
+          <div className={`transform-style-preserve-3d transition-transform duration-700 ${isFlipped?'rotate-y-180':''}`}>
+            {/* Front */}
+            <div className="absolute w-full h-full backface-hidden bg-white shadow rounded-lg p-6 flex flex-col">
+              <div className="text-gray-500 mb-2">Question:</div>
+              <div className="mb-4 text-xl flex-grow">{card.question}</div>
+              {card.imageUrl && <img src={card.imageUrl} alt="" className="max-h-48 mb-4 object-contain mx-auto"/>}
+              <form onSubmit={handleSubmit} className="mt-auto">
+                <div className="mb-4">
+                  <label className="block mb-1">Your Answer:</label>
+                  <div className="flex">
+                    <input
+                      ref={answerInputRef}
+                      type="text"
+                      value={studentAnswer}
+                      onChange={e=>setStudentAnswer(e.target.value)}
+                      className="flex-grow border p-2 rounded-l"
+                      placeholder="Type answer"
+                      disabled={answerStatus!==null}
+                    />
+                    {answerStatus==='correct'&&<div className="bg-green-500 p-2 text-white rounded-r"><Check/></div>}
+                    {answerStatus==='incorrect'&&<div className="bg-red-500 p-2 text-white rounded-r"><X/></div>}
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  {answerStatus===null?(
+                    <>
+                      <button type="submit" className="flex-grow bg-blue-500 text-white py-2 rounded">Check Answer</button>
+                      {showHint?(
+                        <div className="flex-grow bg-yellow-100 p-2 rounded">{card.hint}</div>
+                      ):(
+                        <button type="button" className="flex-grow bg-yellow-500 text-white py-2 rounded" onClick={toggleHint}>Show Hint</button>
+                      )}
+                    </>
+                  ):(
+                    <>
+                      <button type="button" className="flex-grow bg-gray-200 py-2 rounded" onClick={resetCard}>Try Again</button>
+                      <button type="submit" className="flex-grow bg-blue-500 text-white py-2 rounded">View Solution</button>
+                    </>
+                  )}
+                </div>
+              </form>
+            </div>
+            {/* Back */}
+            <div className="absolute w-full h-full backface-hidden rotate-y-180 bg-blue-50 shadow rounded-lg p-6 overflow-auto">
+              <h3 className="mb-2">Answer:</h3>
+              <div className="mb-4 font-medium">{card.answer}</div>
+              {card.answerImageUrl&&<img src={card.answerImageUrl} alt="" className="max-h-40 mb-4 object-contain mx-auto"/>}
+              {card.explanation&&(
+                <div className="mb-4">
+                  <h4>Solution:</h4>
+                  <pre className="whitespace-pre-line bg-white p-2 rounded border">{card.explanation}</pre>
+                </div>
+              )}
+              {card.videoUrl&&(
+                <a href={card.videoUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline mb-4 block">
+                  Watch Video
+                </a>
+              )}
+              <button
+                className="mt-auto bg-blue-500 text-white py-2 px-4 rounded"
+                onClick={()=>{
+                  if(currentCardIndex===currentTopic.cards.length-1){
+                    prepareSummaryData(); setView('summary'); setTimerActive(false);
+                  } else {
+                    nextCard();
+                  }
+                }}
+              >
+                {currentCardIndex===currentTopic.cards.length-1?'Finish':'Next Card'}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation & teacher controls */}
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={prevCard} disabled={currentCardIndex===0} className="px-4 py-2 bg-gray-200 rounded">Previous</button>
+          <button onClick={skipCard} className="px-4 py-2 bg-gray-200 rounded">Skip</button>
+        </div>
+        {mode==='teacher'&&(
+          <div className="flex space-x-4">
+            <button onClick={createNewCard} className="bg-blue-500 text-white px-4 py-2 rounded">Add Card</button>
+            <button onClick={()=>editCard(card)} className="bg-yellow-500 text-white px-4 py-2 rounded">Edit Card</button>
+            <button onClick={()=>deleteCard(card.id)} className="bg-red-500 text-white px-4 py-2 rounded">Delete Card</button>
+            <button onClick={()=>setView('import')} className="bg-green-500 text-white px-4 py-2 rounded">Import Excel</button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  function renderSummary(){
+    if(!summaryData){ prepareSummaryData(); return <div className="p-4">Loading summary...</div>; }
+    return (
+      <div className="p-4 max-w-4xl mx-auto space-y-6">
+        <div className="bg-white p-6 rounded shadow flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full">
+              {topicIcons[summaryData.icon]}
+            </div>
+            <div>
+              <h2 className="text-2xl">{summaryData.topicName} Summary</h2>
+              <p className="text-blue-200">{summaryData.grade.comment}</p>
+            </div>
+          </div>
+          <div className="bg-white text-blue-800 rounded-full w-16 h-16 flex items-center justify-center text-2xl font-bold border-4 border-white">
+            {summaryData.grade.letter}
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-blue-50 p-4 rounded text-center">
+            <div className="text-3xl text-blue-600">{summaryData.overallCorrectPercentage}%</div>
+            <div>Overall Score</div>
+          </div>
+          <div className="bg-green-50 p-4 rounded text-center">
+            <div className="text-3xl text-green-600">{summaryData.correct}</div>
+            <div>Correct</div>
+          </div>
+          <div className="bg-red-50 p-4 rounded text-center">
+            <div className="text-3xl text-red-600">{summaryData.incorrect}</div>
+            <div>Incorrect</div>
+          </div>
+          <div className="bg-gray-50 p-4 rounded text-center">
+            <div className="text-3xl text-gray-600">{formatTime(summaryData.timeTaken)}</div>
+            <div>Time Taken</div>
+          </div>
+        </div>
+        <div>
+          <h3>Strengths</h3>
+          {summaryData.strengths.length>0?summaryData.strengths.map(s=>(
+            <div key={s} className="bg-green-50 p-2 rounded my-1">
+              {s}: {summaryData.subtopicsAnalysis[s].correctPercentage}%
+            </div>
+          )):<div>No strengths identified.</div>}
+        </div>
+        <div>
+          <h3>Areas to Improve</h3>
+          {summaryData.weaknesses.length>0?summaryData.weaknesses.map(s=>(
+            <div key={s} className="bg-red-50 p-2 rounded my-1">
+              {s}: {summaryData.subtopicsAnalysis[s].correctPercentage}%
+            </div>
+          )):<div>None!</div>}
+        </div>
+        <div>
+          <h3>Recommended Next Steps</h3>
+          {summaryData.recommendedTopics.length>0?summaryData.recommendedTopics.map(t=>(
+            <div key={t.id} className="bg-white p-2 rounded shadow my-1 cursor-pointer" onClick={()=>selectTopic(topics.find(x=>x.id===t.id))}>
+              {t.title}: {t.reason}
+            </div>
+          )):<div>None</div>}
+        </div>
+        <div className="flex justify-between">
+          <button onClick={goToTopics} className="px-4 py-2 bg-gray-200 rounded">Back to Topics</button>
+          <button onClick={()=>selectTopic(currentTopic)} className="px-4 py-2 bg-blue-500 text-white rounded">Try Again</button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderCardEditor() {
+    if(!editingCard) return null;
+    return (
+      <div className="p-4 max-w-2xl mx-auto bg-white shadow rounded space-y-6">
+        <h2 className="text-xl">{editingCard.id?'Edit Card':'New Card'}</h2>
+        <textarea value={editingCard.question} placeholder="Question"
+                  onChange={e=>setEditingCard(c=>({...c,question:e.target.value}))}
+                  className="w-full border p-2 rounded" rows={3}/>
+        <input type="text" value={editingCard.subtopic||''} placeholder="Subtopic"
+               onChange={e=>setEditingCard(c=>({...c,subtopic:e.target.value}))}
+               className="w-full border p-2 rounded"/>
+        <div>
+          <p>Question Image</p>
+          <input type="file" accept="image/*" onChange={e=>handleImageUpload(e,true)}/>
+          {editingCard.imageUrl&&<img src={editingCard.imageUrl} alt="" className="h-32 object-contain"/>}
+        </div>
+        <textarea value={editingCard.hint} placeholder="Hint"
+                  onChange={e=>setEditingCard(c=>({...c,hint:e.target.value}))}
+                  className="w-full border p-2 rounded" rows={2}/>
+        <textarea value={editingCard.answer} placeholder="Answer"
+                  onChange={e=>setEditingCard(c=>({...c,answer:e.target.value}))}
+                  className="w-full border p-2 rounded" rows={2}/>
+        <textarea value={(editingCard.acceptableAnswers||[]).join(', ')} placeholder="Acceptable answers (comma)"
+                  onChange={e=>{
+                    const arr=e.target.value.split(',').map(s=>s.trim()).filter(s=>s);
+                    setEditingCard(c=>({...c,acceptableAnswers:arr}));
+                  }}
+                  className="w-full border p-2 rounded" rows={2}/>
+        <div>
+          <p>Answer Image</p>
+          <input type="file" accept="image/*" onChange={e=>handleImageUpload(e,false)}/>
+          {editingCard.answerImageUrl&&<img src={editingCard.answerImageUrl} alt="" className="h-32 object-contain"/>}
+        </div>
+        <textarea value={editingCard.explanation} placeholder="Explanation"
+                  onChange={e=>setEditingCard(c=>({...c,explanation:e.target.value}))}
+                  className="w-full border p-2 rounded" rows={4}/>
+        <input type="text" value={editingCard.videoUrl} placeholder="Video URL"
+               onChange={e=>setEditingCard(c=>({...c,videoUrl:e.target.value}))}
+               className="w-full border p-2 rounded"/>
+        <div className="flex justify-end space-x-4">
+          <button onClick={()=>{setEditingCard(null); setView('cards');}} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+          <button onClick={saveCard} className="px-4 py-2 bg-blue-500 text-white rounded">Save Card</button>
+        </div>
+      </div>
+    );
+  }
+
+  function renderLogin(){
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="bg-white p-6 shadow rounded space-y-4">
+          <h2 className="text-xl">Teacher Login</h2>
+          <input type="password" ref={passwordInputRef}
+                 value={passwordInput} placeholder="Password"
+                 onChange={e=>setPasswordInput(e.target.value)}
+                 className="w-full border p-2 rounded"
+                 onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();login();}}}/>
+          {passwordError&&<div className="text-red-500">{passwordError}</div>}
+          <div className="flex justify-end space-x-4">
+            <button onClick={()=>setView('topics')} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+            <button onClick={login} className="px-4 py-2 bg-blue-500 text-white rounded">Login</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderImport(){
+    return (
+      <div className="p-4 max-w-3xl mx-auto space-y-6">
+        <h2 className="text-xl">Import Excel for "{currentTopic?.title}"</h2>
+        <div className="bg-white p-6 shadow rounded space-y-6">
+          {!sheetData?(
+            <>
+              <p>Upload an Excel (.xls/.xlsx) with Q&A.</p>
+              <input type="file" accept=".xls,.xlsx" onChange={handleExcelUpload}/>
+              {importError&&<div className="text-red-500">{importError}</div>}
+              <button onClick={()=>setView('cards')} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+            </>
+          ):(
+            <>
+              <p>Found {sheetData.rows.length} rows. Map columns:</p>
+              <div className="grid grid-cols-2 gap-4">
+                {['question','answer','hint','explanation','acceptableAnswers','videoUrl','subtopic'].map(key=>(
+                  <div key={key}>
+                    <label className="block capitalize">{key}</label>
+                    <select
+                      value={columnMappings[key]}
+                      onChange={e=>setColumnMappings(m=>({...m,[key]:e.target.value}))}
+                      className="w-full border p-2 rounded"
+                    >
+                      <option value="">—</option>
+                      {sheetData.headers.map((h,i)=>(
+                        <option key={i} value={i}>{h}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <button onClick={cancelImport} className="px-4 py-2 bg-gray-200 rounded">Cancel</button>
+              <button onClick={importCards} disabled={!columnMappings.question||!columnMappings.answer}
+                      className="px-4 py-2 bg-green-500 text-white rounded disabled:opacity-50">
+                Import
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Main render
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {renderHeader()}
+      <main className="flex-1 overflow-auto">
+        {view==='topics'    && renderTopics()}
+        {view==='cards'     && renderCards()}
+        {view==='login'     && renderLogin()}
+        {view==='newTopic'  && renderNewTopic()}
+        {view==='editTopic' && renderEditTopic()}
+        {view==='edit'      && renderCardEditor()}
+        {view==='import'    && renderImport()}
+        {view==='summary'   && renderSummary()}
+      </main>
+    </div>
+  );
+}
+
+export default function App() {
+  return <MathsFlashApp />;
+}
