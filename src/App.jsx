@@ -558,4 +558,8 @@ function MathsFlashApp() {
   );
 }
 
+function App() {
+  return <MathsFlashApp />;
+}
+
 export default App;
