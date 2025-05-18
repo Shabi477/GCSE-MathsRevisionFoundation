@@ -1,7 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, FileSpreadsheet, BarChart, Award, BookOpen, Image } from 'lucide-react';
+import { Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, FileSpreadsheet, BarChart, Award, BookOpen, Image, ChevronLeft, Sparkles, Brain, BookOpenCheck, RefreshCw, FileCheck, Star, BookMarked } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './MathsFlash.css';
+
+// Confirmation Dialog Component
+const ConfirmDialog = ({ isOpen, title, message, onConfirm, onCancel }) => {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg max-w-md w-full p-6 transform transition-all animate-fade-in">
+        <h3 className="text-lg font-bold mb-2 dark:text-gray-200">{title}</h3>
+        <p className="mb-6 text-gray-600 dark:text-gray-400">{message}</p>
+        <div className="flex justify-end space-x-3">
+          <button
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            onClick={onConfirm}
+          >
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 function MathsFlashApp() {
   // Basic state
@@ -20,6 +48,15 @@ function MathsFlashApp() {
   const [answerStatus, setAnswerStatus] = useState(null); // null, 'correct', or 'incorrect'
   const passwordInputRef = useRef(null);
   const answerInputRef = useRef(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  // Confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
   
   // Performance tracking state
   const [performanceData, setPerformanceData] = useState({});
@@ -50,13 +87,18 @@ function MathsFlashApp() {
     skipped: 0
   });
   
-  // Topic icons mapping
+  // Topic icons mapping with enhanced options
   const topicIcons = {
     calculator: <Calculator size={24} />,
     circle: <Circle size={24} />,
     triangle: <Triangle size={24} />,
     penLine: <PenLine size={24} />,
-    table: <Table size={24} />
+    table: <Table size={24} />,
+    sparkles: <Sparkles size={24} />,
+    brain: <Brain size={24} />,
+    bookOpenCheck: <BookOpenCheck size={24} />,
+    star: <Star size={24} />,
+    bookMarked: <BookMarked size={24} />
   };
   
   // Topics and cards
@@ -116,7 +158,7 @@ function MathsFlashApp() {
     { 
       id: 3, 
       title: 'Physics',
-      icon: 'atom',
+      icon: 'brain',
       imageUrl: '', // Added imageUrl property
       cards: [
         {
@@ -136,6 +178,178 @@ function MathsFlashApp() {
   ]);
   const [currentTopic, setCurrentTopic] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  
+  // Add custom CSS to document head
+  useEffect(() => {
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      .card-flip {
+        perspective: 1000px;
+      }
+      .card-inner {
+        transition: transform 0.8s;
+        transform-style: preserve-3d;
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+      .flipped .card-inner {
+        transform: rotateY(180deg);
+      }
+      .card-front, .card-back {
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 1rem;
+      }
+      .card-front {
+        z-index: 2;
+      }
+      .card-back {
+        transform: rotateY(180deg);
+      }
+      
+      /* Animations */
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      @keyframes slideIn {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
+      
+      .fade-in {
+        animation: fadeIn 0.4s ease-in-out;
+      }
+      
+      .slide-in {
+        animation: slideIn 0.5s ease-out;
+      }
+      
+      .pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+      
+      .progress-ring {
+        transition: stroke-dashoffset 0.5s ease;
+      }
+      
+      /* Dark mode styles */
+      .dark-mode {
+        background-color: #1a1a2e;
+        color: #e6e6e6;
+      }
+      
+      .dark-mode .bg-white {
+        background-color: #2a2a40;
+      }
+      
+      .dark-mode .text-gray-700 {
+        color: #d1d1d1;
+      }
+      
+      .dark-mode .text-gray-600 {
+        color: #b8b8b8;
+      }
+      
+      .dark-mode .text-gray-500 {
+        color: #a0a0a0;
+      }
+      
+      .dark-mode .border-gray-300 {
+        border-color: #3a3a50;
+      }
+      
+      .dark-mode .bg-gray-50 {
+        background-color: #252538;
+      }
+      
+      .dark-mode .bg-blue-50 {
+        background-color: #1e3a5f;
+      }
+      
+      .dark-mode .bg-green-50 {
+        background-color: #1e3b2f;
+      }
+      
+      .dark-mode .bg-red-50 {
+        background-color: #3b1e1e;
+      }
+      
+      .dark-mode .bg-yellow-50 {
+        background-color: #3b331e;
+      }
+      
+      /* Custom scrollbar */
+      * {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+      }
+      
+      *::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      *::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      
+      *::-webkit-scrollbar-thumb {
+        background-color: rgba(155, 155, 155, 0.5);
+        border-radius: 20px;
+        border: transparent;
+      }
+      
+      .tooltip {
+        position: relative;
+        display: inline-block;
+      }
+      
+      .tooltip .tooltip-text {
+        visibility: hidden;
+        width: 120px;
+        background-color: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px;
+        position: absolute;
+        z-index: 1;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
+      .tooltip:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+      }
+    `;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+  
+  // Toggle dark mode
+  function toggleDarkMode() {
+    setIsDarkMode(!isDarkMode);
+  }
   
   // Initialize performance data when topics change
   useEffect(() => {
@@ -797,47 +1011,56 @@ function MathsFlashApp() {
   function deleteCard(cardId) {
     if (!currentTopic) return;
     
-    // Add confirmation dialog
-    if (!window.confirm("Are you sure you want to delete this card?")) {
-      return;
-    }
-    
-    const updatedTopics = [...topics];
-    const topicIndex = updatedTopics.findIndex(t => t.id === currentTopic.id);
-    
-    if (topicIndex === -1) return;
-    
-    const cardToDelete = updatedTopics[topicIndex].cards.find(card => card.id === cardId);
-    const subtopic = cardToDelete?.subtopic || 'General';
-    
-    updatedTopics[topicIndex].cards = updatedTopics[topicIndex].cards.filter(card => card.id !== cardId);
-    
-    // Update performance data
-    if (cardToDelete) {
-      const updatedPerformanceData = {...performanceData};
-      if (updatedPerformanceData[currentTopic.id]) {
-        updatedPerformanceData[currentTopic.id].total -= 1;
+    // Show confirmation dialog
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Card',
+      message: 'Are you sure you want to delete this card? This action cannot be undone.',
+      onConfirm: () => {
+        const updatedTopics = [...topics];
+        const topicIndex = updatedTopics.findIndex(t => t.id === currentTopic.id);
         
-        if (updatedPerformanceData[currentTopic.id].subtopics[subtopic]) {
-          updatedPerformanceData[currentTopic.id].subtopics[subtopic].total -= 1;
+        if (topicIndex === -1) return;
+        
+        const cardToDelete = updatedTopics[topicIndex].cards.find(card => card.id === cardId);
+        const subtopic = cardToDelete?.subtopic || 'General';
+        
+        updatedTopics[topicIndex].cards = updatedTopics[topicIndex].cards.filter(card => card.id !== cardId);
+        
+        // Update performance data
+        if (cardToDelete) {
+          const updatedPerformanceData = {...performanceData};
+          if (updatedPerformanceData[currentTopic.id]) {
+            updatedPerformanceData[currentTopic.id].total -= 1;
+            
+            if (updatedPerformanceData[currentTopic.id].subtopics[subtopic]) {
+              updatedPerformanceData[currentTopic.id].subtopics[subtopic].total -= 1;
+            }
+            
+            setPerformanceData(updatedPerformanceData);
+          }
         }
         
-        setPerformanceData(updatedPerformanceData);
+        setTopics(updatedTopics);
+        setCurrentTopic({...updatedTopics[topicIndex]});
+        
+        // If no cards left, go back to topics view
+        if (updatedTopics[topicIndex].cards.length === 0) {
+          setView('topics');
+          return;
+        }
+        
+        if (currentCardIndex >= updatedTopics[topicIndex].cards.length) {
+          setCurrentCardIndex(Math.max(0, updatedTopics[topicIndex].cards.length - 1));
+        }
+        
+        // Close the dialog
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
+      },
+      onCancel: () => {
+        setConfirmDialog({ ...confirmDialog, isOpen: false });
       }
-    }
-    
-    setTopics(updatedTopics);
-    setCurrentTopic({...updatedTopics[topicIndex]});
-    
-    // If no cards left, go back to topics view
-    if (updatedTopics[topicIndex].cards.length === 0) {
-      setView('topics');
-      return;
-    }
-    
-    if (currentCardIndex >= updatedTopics[topicIndex].cards.length) {
-      setCurrentCardIndex(Math.max(0, updatedTopics[topicIndex].cards.length - 1));
-    }
+    });
   }
   
   // Flashcard interaction functions
@@ -919,29 +1142,79 @@ function MathsFlashApp() {
     setTimerActive(!timerActive);
   }
   
+  // Generate a circular progress indicator
+  function CircularProgress({ percentage, size = 36, strokeWidth = 3, color }) {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percentage / 100) * circumference;
+    
+    return (
+      <svg height={size} width={size} className="transform -rotate-90">
+        <circle
+          stroke="#e5e7eb"
+          fill="transparent"
+          strokeWidth={strokeWidth}
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <circle
+          stroke={color}
+          fill="transparent"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="progress-ring"
+        />
+        <text
+          x="50%"
+          y="50%"
+          dy=".3em"
+          textAnchor="middle"
+          fill={color}
+          fontSize={size / 4}
+          fontWeight="bold"
+        >
+          {percentage}%
+        </text>
+      </svg>
+    );
+  }
+  
   // Render functions
   function renderHeader() {
     return (
-      <header className="bg-blue-600 text-white shadow-md">
+      <header className={`${isDarkMode ? 'bg-gray-800' : 'bg-gradient-to-r from-blue-600 to-indigo-700'} text-white shadow-lg sticky top-0 z-10`}>
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center">
             <h1 
-              className="text-xl md:text-2xl font-bold cursor-pointer" 
+              className="text-xl md:text-2xl font-bold cursor-pointer flex items-center" 
               onClick={goToTopics}
             >
-              MathsFlash
+              <span className="mr-2">🧠</span> MathsFlash
             </h1>
           </div>
           
           <div className="flex items-center space-x-2">
             {mode === 'teacher' && (
-              <span className="bg-yellow-500 text-xs font-medium px-2 py-1 rounded-full">
+              <span className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-xs font-medium px-3 py-1 rounded-full shadow-sm">
                 Teacher Mode
               </span>
             )}
             
             <button 
-              className="p-2 rounded-full hover:bg-blue-700"
+              className="p-2 rounded-full hover:bg-white hover:bg-opacity-20 transition duration-200"
+              onClick={toggleDarkMode}
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
+            
+            <button 
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-white bg-opacity-20 hover:bg-opacity-30'} transition duration-200`}
               onClick={() => {
                 if (mode === 'teacher') {
                   setMode('student');
@@ -960,92 +1233,157 @@ function MathsFlashApp() {
   
   function renderTopics() {
     return (
-      <div className="p-4">
-        <h2 className="text-2xl font-bold text-center mb-6">Foundation Maths Topics</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className={`p-4 ${isDarkMode ? 'dark-mode' : ''}`}>
+        <h2 className="text-2xl font-bold text-center mb-8 fade-in">
+          <span className={`${isDarkMode ? 'text-purple-300' : 'text-indigo-600'}`}>Foundation Maths</span> Topics
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 fade-in">
           {topics.map(topic => (
             <div 
               key={topic.id} 
-              className="bg-white rounded-lg shadow-md p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow"
+              className={`bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 overflow-hidden cursor-pointer ${isDarkMode ? 'dark-mode' : ''}`}
               onClick={() => selectTopic(topic)}
             >
-              {/* Display topic image if available */}
-              {topic.imageUrl && (
-                <div className="mb-3 flex justify-center">
-                  <img 
-                    src={topic.imageUrl} 
-                    alt={`${topic.title} visualization`} 
-                    className="h-32 rounded-md object-contain"
-                  />
-                </div>
-              )}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  <div className="text-blue-500">
-                    {topicIcons[topic.icon]}
+              {/* Topic header with gradient background */}
+              <div className={`p-4 ${isDarkMode ? 'bg-gray-700' : 'bg-gradient-to-r from-blue-500 to-indigo-600'} text-white relative overflow-hidden`}>
+                {/* Abstract background decoration */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mt-16 -mr-16"></div>
+                <div className="absolute bottom-0 left-0 w-16 h-16 bg-white opacity-10 rounded-full -mb-8 -ml-8"></div>
+                
+                <div className="flex justify-between items-center relative z-10">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-white bg-opacity-20 rounded-full">
+                      {topicIcons[topic.icon]}
+                    </div>
+                    <h3 className="text-xl font-semibold">{topic.title}</h3>
                   </div>
-                  <h3 className="text-lg font-semibold">{topic.title}</h3>
-                </div>
-                <div className="flex items-center">
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                    {topic.cards.length} cards
-                  </span>
-                  <ChevronRight size={16} className="ml-2 text-gray-400" />
+                  <div className="flex items-center">
+                    <span className="px-3 py-1 bg-white bg-opacity-20 text-white rounded-full text-sm flex items-center">
+                      {topic.cards.length} cards
+                      <ChevronRight size={16} className="ml-1" />
+                    </span>
+                  </div>
                 </div>
               </div>
               
-              {/* Show previous performance if available */}
-              {performanceData[topic.id] && 
-               (performanceData[topic.id].correct > 0 || performanceData[topic.id].incorrect > 0) && (
-                <div className="mt-2 pt-2 border-t border-gray-100">
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div>
-                      Previous: {performanceData[topic.id].correct} correct, 
-                      {performanceData[topic.id].incorrect} incorrect
+              {/* Display topic image if available */}
+              {topic.imageUrl && (
+                <div className="relative h-36 overflow-hidden">
+                  <img 
+                    src={topic.imageUrl} 
+                    alt={`${topic.title} visualization`} 
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black to-transparent opacity-30"></div>
+                </div>
+              )}
+              
+              {/* Topic content */}
+              <div className="p-4">
+                {/* Show previous performance if available */}
+                {performanceData[topic.id] && 
+                 (performanceData[topic.id].correct > 0 || performanceData[topic.id].incorrect > 0) && (
+                  <div className="mt-2 pt-3 border-t border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-gray-600">
+                        Previous performance
+                      </div>
+                      <div className="flex items-center">
+                        {performanceData[topic.id].correct + performanceData[topic.id].incorrect > 0 && (
+                          <CircularProgress 
+                            percentage={Math.round(performanceData[topic.id].correct / 
+                              (performanceData[topic.id].correct + performanceData[topic.id].incorrect) * 100)}
+                            color={isDarkMode ? "#60a5fa" : "#3b82f6"}
+                            size={40}
+                          />
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      {performanceData[topic.id].correct + performanceData[topic.id].incorrect > 0 && (
-                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-1">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full" 
-                            style={{ 
-                              width: `${Math.round(performanceData[topic.id].correct / 
-                                (performanceData[topic.id].correct + performanceData[topic.id].incorrect) * 100)}%` 
-                            }}
-                          ></div>
+                    <div className="flex justify-between mt-2 text-xs">
+                      <div className="flex items-center">
+                        <span className="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>
+                        <span className="text-gray-500">{performanceData[topic.id].correct} correct</span>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>
+                        <span className="text-gray-500">{performanceData[topic.id].incorrect} incorrect</span>
+                      </div>
+                      {performanceData[topic.id].skipped > 0 && (
+                        <div className="flex items-center">
+                          <span className="inline-block w-2 h-2 rounded-full bg-gray-500 mr-1"></span>
+                          <span className="text-gray-500">{performanceData[topic.id].skipped} skipped</span>
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              )}
-              
-              {/* Edit topic button (only visible in teacher mode) */}
-              {mode === 'teacher' && (
-                <div className="mt-2 text-right">
-                  <button 
-                    className="text-gray-500 text-xs hover:text-blue-500"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent triggering the parent onClick
-                      editTopic(topic);
-                    }}
-                  >
-                    Edit Topic
-                  </button>
-                </div>
-              )}
+                )}
+                
+                {/* Topic summary - cards by subtopic */}
+                {topic.cards.length > 0 && (
+                  <div className={`mt-3 pt-3 ${performanceData[topic.id] && 
+                    (performanceData[topic.id].correct > 0 || performanceData[topic.id].incorrect > 0) ? 
+                    '' : 'border-t border-gray-100'}`}>
+                    
+                    <div className="text-xs text-gray-500 mb-2">Card categories:</div>
+                    
+                    {/* Get unique subtopics */}
+                    {(() => {
+                      const subtopics = {};
+                      topic.cards.forEach(card => {
+                        const subtopic = card.subtopic || 'General';
+                        if (!subtopics[subtopic]) {
+                          subtopics[subtopic] = 0;
+                        }
+                        subtopics[subtopic]++;
+                      });
+                      
+                      return (
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(subtopics).map(([subtopic, count]) => (
+                            <div 
+                              key={subtopic} 
+                              className={`px-2 py-1 text-xs rounded-full ${
+                                isDarkMode 
+                                  ? 'bg-gray-700 text-gray-300' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}
+                            >
+                              {subtopic} ({count})
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+                
+                {/* Edit topic button (only visible in teacher mode) */}
+                {mode === 'teacher' && (
+                  <div className="mt-3 text-right">
+                    <button 
+                      className={`text-${isDarkMode ? 'blue-400' : 'blue-500'} text-sm hover:text-${isDarkMode ? 'blue-300' : 'blue-700'} transition duration-200`}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent triggering the parent onClick
+                        editTopic(topic);
+                      }}
+                    >
+                      Edit Topic
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
           
           {mode === 'teacher' && (
             <div 
-              className="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-4 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors"
+              className={`bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition-colors ${isDarkMode ? 'dark-mode' : ''}`}
               onClick={() => setView('newTopic')}
             >
-              <div className="text-gray-400 mb-2">
-                <Plus size={24} />
+              <div className={`p-3 rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-blue-100'} mb-4`}>
+                <Plus size={24} className={isDarkMode ? 'text-blue-300' : 'text-blue-500'} />
               </div>
-              <p className="text-gray-500">Add New Topic</p>
+              <p className={`text-${isDarkMode ? 'gray-300' : 'gray-600'} font-medium`}>Add New Topic</p>
             </div>
           )}
         </div>
@@ -1055,89 +1393,116 @@ function MathsFlashApp() {
   
   function renderNewTopic() {
     return (
-      <div className="p-4 max-w-md mx-auto">
-        <h2 className="text-xl font-bold mb-6">Create New Foundation Maths Topic</h2>
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name</label>
-            <input
-              type="text"
-              value={newTopicName}
-              onChange={(e) => setNewTopicName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              autoFocus
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Choose Icon</label>
-            <div className="grid grid-cols-3 gap-3">
-              {Object.entries(topicIcons).map(([key, icon]) => (
-                <div 
-                  key={key}
-                  onClick={() => setSelectedIcon(key)}
-                  className={`flex items-center justify-center p-3 rounded-md cursor-pointer border-2 ${selectedIcon === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
-                >
-                  <div className={selectedIcon === key ? 'text-blue-500' : 'text-gray-600'}>
-                    {icon}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* New topic image upload section */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Image (optional)</label>
-            <div className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-md bg-gray-50">
-              <Image size={24} className="text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500 mb-3">Upload an image to visually represent this topic</p>
-              
+      <div className={`p-6 max-w-md mx-auto ${isDarkMode ? 'dark-mode' : ''}`}>
+        <h2 className={`text-2xl font-bold mb-8 text-center ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+          <span className={isDarkMode ? 'text-blue-300' : 'text-blue-600'}>Create New</span> Foundation Maths Topic
+        </h2>
+        <div className={`bg-white rounded-xl shadow-lg p-6 ${isDarkMode ? 'dark-mode' : ''}`}>
+          <div className="space-y-6">
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Topic Name</label>
               <input
-                type="file"
-                accept="image/*"
-                id="topic-image-upload"
-                className="hidden"
-                onChange={handleTopicImageUpload}
+                type="text"
+                value={newTopicName}
+                onChange={(e) => setNewTopicName(e.target.value)}
+                className={`w-full p-3 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                autoFocus
+                placeholder="e.g. Trigonometry, Calculus, Statistics"
               />
-              
-              <label
-                htmlFor="topic-image-upload"
-                className="px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
-              >
-                Choose Image
-              </label>
-              
-              {/* Preview the selected image */}
-              {topicImageUrl && (
-                <div className="mt-4 border rounded p-2 w-full">
-                  <p className="text-xs text-gray-500 mb-2">Selected image:</p>
-                  <img 
-                    src={topicImageUrl} 
-                    alt="Topic preview" 
-                    className="mx-auto max-h-32 object-contain"
-                  />
-                </div>
-              )}
             </div>
-          </div>
-          
-          <div className="flex justify-between pt-4">
-            <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-              onClick={() => {
-                setView('topics');
-                setTopicImageUrl(''); // Clear the image state
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              onClick={saveNewTopic}
-            >
-              Create Topic
-            </button>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Choose Icon</label>
+              <div className="grid grid-cols-4 gap-3">
+                {Object.entries(topicIcons).map(([key, icon]) => (
+                  <div 
+                    key={key}
+                    onClick={() => setSelectedIcon(key)}
+                    className={`flex items-center justify-center p-3 rounded-lg cursor-pointer border-2 transition-all ${
+                      selectedIcon === key 
+                        ? isDarkMode 
+                          ? 'border-blue-500 bg-blue-900 bg-opacity-50' 
+                          : 'border-blue-500 bg-blue-50' 
+                        : isDarkMode 
+                          ? 'border-gray-600 hover:border-gray-500' 
+                          : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={selectedIcon === key ? (isDarkMode ? 'text-blue-300' : 'text-blue-500') : (isDarkMode ? 'text-gray-400' : 'text-gray-600')}>
+                      {icon}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* New topic image upload section */}
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Topic Image (optional)</label>
+              <div className={`flex flex-col items-center p-6 border-2 border-dashed ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-300 bg-gray-50'} rounded-lg`}>
+                <Image size={28} className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2 mb-4 text-center`}>
+                  Upload an image to visually represent this topic
+                </p>
+                
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="topic-image-upload"
+                  className="hidden"
+                  onChange={handleTopicImageUpload}
+                />
+                
+                <label
+                  htmlFor="topic-image-upload"
+                  className={`px-4 py-2 ${
+                    isDarkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white rounded-lg cursor-pointer transition-colors`}
+                >
+                  Choose Image
+                </label>
+                
+                {/* Preview the selected image */}
+                {topicImageUrl && (
+                  <div className={`mt-4 border rounded-lg p-3 w-full ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Selected image:</p>
+                    <img 
+                      src={topicImageUrl} 
+                      alt="Topic preview" 
+                      className="mx-auto max-h-32 rounded-md object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-between pt-4">
+              <button
+                className={`px-4 py-2 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                } rounded-lg transition-colors`}
+                onClick={() => {
+                  setView('topics');
+                  setTopicImageUrl(''); // Clear the image state
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className={`px-4 py-2 ${
+                  isDarkMode 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-blue-500 hover:bg-blue-600'
+                } text-white rounded-lg transition-colors`}
+                onClick={saveNewTopic}
+              >
+                Create Topic
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1149,99 +1514,125 @@ function MathsFlashApp() {
     const topicToEdit = topics.find(t => t.title === newTopicName);
     
     return (
-      <div className="p-4 max-w-md mx-auto">
-        <h2 className="text-xl font-bold mb-6">Edit Foundation Maths Topic</h2>
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Name</label>
-            <input
-              type="text"
-              value={newTopicName}
-              onChange={(e) => setNewTopicName(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              autoFocus
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Choose Icon</label>
-            <div className="grid grid-cols-3 gap-3">
-              {Object.entries(topicIcons).map(([key, icon]) => (
-                <div 
-                  key={key}
-                  onClick={() => setSelectedIcon(key)}
-                  className={`flex items-center justify-center p-3 rounded-md cursor-pointer border-2 ${selectedIcon === key ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}
-                >
-                  <div className={selectedIcon === key ? 'text-blue-500' : 'text-gray-600'}>
-                    {icon}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          
-          {/* Topic image upload/edit section */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Topic Image (optional)</label>
-            <div className="flex flex-col items-center p-4 border-2 border-dashed border-gray-300 rounded-md bg-gray-50">
-              <Image size={24} className="text-gray-400 mb-2" />
-              <p className="text-sm text-gray-500 mb-3">Upload an image to visually represent this topic</p>
-              
+      <div className={`p-6 max-w-md mx-auto ${isDarkMode ? 'dark-mode' : ''}`}>
+        <h2 className={`text-2xl font-bold mb-8 text-center ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+          <span className={isDarkMode ? 'text-purple-300' : 'text-indigo-600'}>Edit</span> Foundation Maths Topic
+        </h2>
+        <div className={`bg-white rounded-xl shadow-lg p-6 ${isDarkMode ? 'dark-mode' : ''}`}>
+          <div className="space-y-6">
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Topic Name</label>
               <input
-                type="file"
-                accept="image/*"
-                id="topic-image-edit"
-                className="hidden"
-                onChange={handleTopicImageUpload}
+                type="text"
+                value={newTopicName}
+                onChange={(e) => setNewTopicName(e.target.value)}
+                className={`w-full p-3 border ${isDarkMode ? 'border-gray-600 bg-gray-700 text-white' : 'border-gray-300'} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                autoFocus
               />
-              
-              <label
-                htmlFor="topic-image-edit"
-                className="px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
-              >
-                {topicImageUrl ? 'Change Image' : 'Choose Image'}
-              </label>
-              
-              {/* Preview the selected image */}
-              {topicImageUrl && (
-                <div className="mt-4 border rounded p-2 w-full">
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="text-xs text-gray-500">Current image:</p>
-                    <button 
-                      className="text-xs text-red-500 hover:text-red-700"
-                      onClick={() => setTopicImageUrl('')}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <img 
-                    src={topicImageUrl} 
-                    alt="Topic preview" 
-                    className="mx-auto max-h-32 object-contain"
-                  />
-                </div>
-              )}
             </div>
-          </div>
-          
-          <div className="flex justify-between pt-4">
-            <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-              onClick={() => {
-                setView('topics');
-                setNewTopicName('');
-                setSelectedIcon('calculator');
-                setTopicImageUrl('');
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              onClick={() => saveEditedTopic(topicToEdit.id)}
-            >
-              Save Changes
-            </button>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-3`}>Choose Icon</label>
+              <div className="grid grid-cols-4 gap-3">
+                {Object.entries(topicIcons).map(([key, icon]) => (
+                  <div 
+                    key={key}
+                    onClick={() => setSelectedIcon(key)}
+                    className={`flex items-center justify-center p-3 rounded-lg cursor-pointer border-2 transition-all ${
+                      selectedIcon === key 
+                        ? isDarkMode 
+                          ? 'border-blue-500 bg-blue-900 bg-opacity-50' 
+                          : 'border-blue-500 bg-blue-50' 
+                        : isDarkMode 
+                          ? 'border-gray-600 hover:border-gray-500' 
+                          : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className={selectedIcon === key ? (isDarkMode ? 'text-blue-300' : 'text-blue-500') : (isDarkMode ? 'text-gray-400' : 'text-gray-600')}>
+                      {icon}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Topic image upload/edit section */}
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-1`}>Topic Image (optional)</label>
+              <div className={`flex flex-col items-center p-6 border-2 border-dashed ${isDarkMode ? 'border-gray-600 bg-gray-800' : 'border-gray-300 bg-gray-50'} rounded-lg`}>
+                <Image size={28} className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2 mb-4 text-center`}>
+                  Upload an image to visually represent this topic
+                </p>
+                
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="topic-image-edit"
+                  className="hidden"
+                  onChange={handleTopicImageUpload}
+                />
+                
+                <label
+                  htmlFor="topic-image-edit"
+                  className={`px-4 py-2 ${
+                    isDarkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white rounded-lg cursor-pointer transition-colors`}
+                >
+                  {topicImageUrl ? 'Change Image' : 'Choose Image'}
+                </label>
+                
+                {/* Preview the selected image */}
+                {topicImageUrl && (
+                  <div className={`mt-4 border rounded-lg p-3 w-full ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Current image:</p>
+                      <button 
+                        className="text-xs text-red-500 hover:text-red-700"
+                        onClick={() => setTopicImageUrl('')}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                    <img 
+                      src={topicImageUrl} 
+                      alt="Topic preview" 
+                      className="mx-auto max-h-32 rounded-md object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex justify-between pt-4">
+              <button
+                className={`px-4 py-2 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                } rounded-lg transition-colors`}
+                onClick={() => {
+                  setView('topics');
+                  setNewTopicName('');
+                  setSelectedIcon('calculator');
+                  setTopicImageUrl('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className={`px-4 py-2 ${
+                  isDarkMode 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-blue-500 hover:bg-blue-600'
+                } text-white rounded-lg transition-colors`}
+                onClick={() => saveEditedTopic(topicToEdit.id)}
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1251,14 +1642,21 @@ function MathsFlashApp() {
   function renderCards() {
     if (!currentTopic || !currentTopic.cards || currentTopic.cards.length === 0) {
       return (
-        <div className="flex flex-col items-center justify-center p-8">
-          <div className="text-gray-500 mb-4">No cards available for this topic.</div>
+        <div className={`flex flex-col items-center justify-center p-16 ${isDarkMode ? 'dark-mode' : ''}`}>
+          <div className={`text-${isDarkMode ? 'gray-300' : 'gray-500'} text-xl mb-6`}>No cards available for this topic.</div>
           {mode === 'teacher' && (
             <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className={`px-6 py-3 ${
+                isDarkMode 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } text-white rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1`}
               onClick={createNewCard}
             >
-              Create First Card
+              <span className="flex items-center">
+                <Plus size={20} className="mr-2" />
+                Create First Card
+              </span>
             </button>
           )}
         </div>
@@ -1268,267 +1666,369 @@ function MathsFlashApp() {
     const card = currentTopic.cards[currentCardIndex];
     
     return (
-      <div className="p-4">
-        {/* Stats and Timer */}
-        <div className="bg-white rounded-lg shadow-md p-3 mb-4 flex justify-between items-center">
-          <div className="flex space-x-4">
-            <div className="text-green-600 font-medium">✓ {stats.correct}</div>
-            <div className="text-red-600 font-medium">✗ {stats.incorrect}</div>
-            <div className="text-gray-600 font-medium">⟳ {stats.skipped}</div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <div className="text-gray-700 font-mono">{formatTime(timer)}</div>
-            <button 
-              className={`px-2 py-1 rounded-md text-xs ${timerActive ? 'bg-red-500' : 'bg-green-500'} text-white`}
-              onClick={toggleTimer}
-            >
-              {timerActive ? 'Pause' : 'Start'}
-            </button>
-            <button 
-              className="px-2 py-1 bg-gray-200 rounded-md text-xs"
-              onClick={resetStats}
-            >
-              Reset
-            </button>
+      <div className={`p-4 ${isDarkMode ? 'dark-mode' : ''}`}>
+        {/* Stats and Timer with improved design */}
+        <div className={`${
+          isDarkMode 
+            ? 'bg-gray-800 border border-gray-700' 
+            : 'bg-white'
+        } rounded-xl shadow-md p-4 mb-6 fade-in`}>
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex space-x-6 mb-4 md:mb-0">
+              <div className={`flex items-center px-4 py-2 ${isDarkMode ? 'bg-green-900' : 'bg-green-100'} rounded-lg`}>
+                <Check size={18} className={`mr-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
+                <span className={`font-medium ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>{stats.correct}</span>
+              </div>
+              <div className={`flex items-center px-4 py-2 ${isDarkMode ? 'bg-red-900' : 'bg-red-100'} rounded-lg`}>
+                <X size={18} className={`mr-2 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`} />
+                <span className={`font-medium ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>{stats.incorrect}</span>
+              </div>
+              <div className={`flex items-center px-4 py-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-lg`}>
+                <RefreshCw size={18} className={`mr-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+                <span className={`font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stats.skipped}</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              <div className={`text-lg font-mono px-4 py-2 ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'} rounded-lg`}>
+                {formatTime(timer)}
+              </div>
+              <button 
+                className={`flex items-center px-3 py-2 rounded-lg text-white transition-colors ${
+                  timerActive 
+                    ? isDarkMode ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'
+                    : isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'
+                }`}
+                onClick={toggleTimer}
+              >
+                {timerActive ? 'Pause' : 'Start'}
+              </button>
+              <button 
+                className={`p-2 ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'} rounded-lg transition-colors`}
+                onClick={resetStats}
+                title="Reset statistics"
+              >
+                <RefreshCw size={16} />
+              </button>
+            </div>
           </div>
         </div>
         
         {/* Topic and Card Info */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-6 fade-in">
           <div className="flex items-center">
             <button 
-              className="mr-3 px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded flex items-center"
+              className={`mr-3 px-3 py-2 text-sm ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              } rounded-lg flex items-center transition-colors`}
               onClick={goToTopics}
             >
-              <ChevronRight size={14} className="transform rotate-180 mr-1" />
+              <ChevronLeft size={16} className="mr-1" />
               Topics
             </button>
-            <div className="text-blue-500 mr-2">
-              {topicIcons[currentTopic.icon]}
+            <div className={`p-2 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-100'} rounded-full mr-3`}>
+              <div className={isDarkMode ? 'text-blue-300' : 'text-blue-500'}>
+                {topicIcons[currentTopic.icon]}
+              </div>
             </div>
-            <h2 className="text-xl font-bold">
-              {currentTopic.title}
+            <div>
+              <h2 className={`text-xl font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                {currentTopic.title}
+              </h2>
               {card.subtopic && card.subtopic !== 'General' && (
-                <span className="ml-2 text-sm font-normal text-gray-500">
+                <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {card.subtopic}
                 </span>
               )}
-            </h2>
+            </div>
           </div>
-          <div className="text-sm">
+          <div className={`px-3 py-1 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'} rounded-lg text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} font-medium`}>
             Card {currentCardIndex + 1} of {currentTopic.cards.length}
           </div>
         </div>
         
-        {/* Flashcard with flip animation */}
-        <div className="h-96 w-full perspective-1000 mb-4">
-          <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${isFlipped ? 'rotate-y-180' : ''}`}>
+        {/* Flashcard with enhanced flip animation */}
+        <div className="card-flip h-96 w-full mb-6 fade-in">
+          <div className={`card-inner w-full h-full ${isFlipped ? 'flipped' : ''}`}>
             {/* Front of card (Question) */}
-            <div className="absolute w-full h-full bg-white rounded-lg shadow-lg backface-hidden">
-              <div className="p-6 flex flex-col h-full">
-                <div className="text-gray-500 text-sm mb-2">Question:</div>
-                <div className="mb-4 font-medium text-lg flex-grow">{card.question}</div>
-                
-                {card.imageUrl && (
-                  <div className="my-4 flex justify-center">
-                    <img 
-                      src={card.imageUrl} 
-                      alt="Question illustration" 
-                      className="max-h-48 rounded-md"
+            <div className={`card-front ${
+              isDarkMode 
+                ? 'bg-gray-800 border-gray-700' 
+                : 'bg-white border-gray-200'
+            } shadow-lg border p-6 flex flex-col`}>
+              <div className={`text-sm mb-2 ${isDarkMode ? 'text-blue-300' : 'text-blue-500'} font-medium uppercase tracking-wide`}>Question:</div>
+              <div className={`mb-4 font-medium text-xl flex-grow ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{card.question}</div>
+              
+              {card.imageUrl && (
+                <div className="my-4 flex justify-center">
+                  <img 
+                    src={card.imageUrl} 
+                    alt="Question illustration" 
+                    className="max-h-48 rounded-lg shadow-md"
+                  />
+                </div>
+              )}
+              
+              <form onSubmit={handleSubmit} className="mt-auto">
+                <div className="mb-4">
+                  <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Your Answer:</label>
+                  <div className="flex">
+                    <input
+                      ref={answerInputRef}
+                      type="text"
+                      value={studentAnswer}
+                      onChange={(e) => setStudentAnswer(e.target.value)}
+                      className={`flex-grow p-3 border rounded-l-lg ${
+                        answerStatus === 'correct' 
+                          ? isDarkMode ? 'border-green-600 bg-green-900 text-green-100' : 'border-green-500 bg-green-50 text-green-800' 
+                          : answerStatus === 'incorrect'
+                          ? isDarkMode ? 'border-red-600 bg-red-900 text-red-100' : 'border-red-500 bg-red-50 text-red-800'
+                          : isDarkMode ? 'border-gray-600 bg-gray-700 text-gray-200' : 'border-gray-300 text-gray-800'
+                      } focus:outline-none focus:ring-2 ${
+                        answerStatus === 'correct'
+                          ? 'focus:ring-green-500'
+                          : answerStatus === 'incorrect'
+                          ? 'focus:ring-red-500'
+                          : 'focus:ring-blue-500'
+                      }`}
+                      placeholder="Type your answer here"
+                      disabled={answerStatus !== null}
                     />
-                  </div>
-                )}
-                
-                <form onSubmit={handleSubmit} className="mt-auto">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Your Answer:</label>
-                    <div className="flex">
-                      <input
-                        ref={answerInputRef}
-                        type="text"
-                        value={studentAnswer}
-                        onChange={(e) => setStudentAnswer(e.target.value)}
-                        className={`flex-grow p-2 border rounded-l-md ${
-                          answerStatus === 'correct' 
-                            ? 'border-green-500 bg-green-50' 
-                            : answerStatus === 'incorrect'
-                            ? 'border-red-500 bg-red-50'
-                            : 'border-gray-300'
-                        }`}
-                        placeholder="Type your answer here"
-                        disabled={answerStatus !== null}
-                      />
-                      {answerStatus === 'correct' && (
-                        <div className="flex items-center justify-center w-10 bg-green-500 text-white rounded-r-md">
-                          <Check size={20} />
-                        </div>
-                      )}
-                      {answerStatus === 'incorrect' && (
-                        <div className="flex items-center justify-center w-10 bg-red-500 text-white rounded-r-md">
-                          <X size={20} />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex space-x-2">
-                    {answerStatus === null ? (
-                      <>
-                        <button 
-                          type="submit"
-                          className="flex-grow py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          Check Answer
-                        </button>
-                        {showHint ? (
-                          <div className="flex-grow bg-yellow-50 p-3 rounded-md border border-yellow-100">
-                            <div className="text-sm text-gray-700">{card.hint}</div>
-                          </div>
-                        ) : (
-                          <button 
-                            type="button"
-                            className="flex-grow py-2 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200"
-                            onClick={toggleHint}
-                          >
-                            Show Hint
-                          </button>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          type="button"
-                          className="flex-grow py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
-                          onClick={resetCard}
-                        >
-                          Try Again
-                        </button>
-                        <button 
-                          type="submit"
-                          className="flex-grow py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                        >
-                          View Solution
-                        </button>
-                      </>
+                    {answerStatus === 'correct' && (
+                      <div className={`flex items-center justify-center w-12 ${isDarkMode ? 'bg-green-600' : 'bg-green-500'} text-white rounded-r-lg`}>
+                        <Check size={22} />
+                      </div>
+                    )}
+                    {answerStatus === 'incorrect' && (
+                      <div className={`flex items-center justify-center w-12 ${isDarkMode ? 'bg-red-600' : 'bg-red-500'} text-white rounded-r-lg`}>
+                        <X size={22} />
+                      </div>
                     )}
                   </div>
-                </form>
-              </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {answerStatus === null ? (
+                    <>
+                      <button 
+                        type="submit"
+                        className={`py-3 ${
+                          isDarkMode 
+                            ? 'bg-blue-600 hover:bg-blue-700' 
+                            : 'bg-blue-500 hover:bg-blue-600'
+                        } text-white rounded-lg transition-colors flex items-center justify-center`}
+                      >
+                        <FileCheck size={18} className="mr-2" />
+                        Check Answer
+                      </button>
+                      {showHint ? (
+                        <div className={`p-3 rounded-lg ${
+                          isDarkMode 
+                            ? 'bg-yellow-900 border border-yellow-700 text-yellow-100' 
+                            : 'bg-yellow-50 border border-yellow-100 text-yellow-800'
+                        }`}>
+                          <div className="text-sm">{card.hint}</div>
+                        </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          className={`py-3 ${
+                            isDarkMode 
+                              ? 'bg-yellow-600 hover:bg-yellow-700' 
+                              : 'bg-yellow-500 hover:bg-yellow-600'
+                          } text-white rounded-lg transition-colors`}
+                          onClick={toggleHint}
+                        >
+                          Show Hint
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <button 
+                        type="button"
+                        className={`py-3 ${
+                          isDarkMode 
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                            : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                        } rounded-lg transition-colors`}
+                        onClick={resetCard}
+                      >
+                        Try Again
+                      </button>
+                      <button 
+                        type="submit"
+                        className={`py-3 ${
+                          isDarkMode 
+                            ? 'bg-blue-600 hover:bg-blue-700' 
+                            : 'bg-blue-500 hover:bg-blue-600'
+                        } text-white rounded-lg transition-colors`}
+                      >
+                        View Solution
+                      </button>
+                    </>
+                  )}
+                </div>
+              </form>
             </div>
             
             {/* Back of card (Answer) */}
-            <div className="absolute w-full h-full bg-blue-50 rounded-lg shadow-lg backface-hidden rotate-y-180 overflow-auto">
-              <div className="p-6">
-                <h3 className="font-semibold mb-2">Answer:</h3>
-                <div className="mb-4 font-medium">{card.answer}</div>
-                
-                {card.answerImageUrl && (
-                  <div className="my-4 flex justify-center">
-                    <img 
-                      src={card.answerImageUrl} 
-                      alt="Answer illustration" 
-                      className="max-h-40 rounded-md"
-                    />
-                  </div>
-                )}
-                
-                {card.explanation && (
-                  <div className="mt-4">
-                    <h3 className="font-semibold mb-2">Solution:</h3>
-                    <div className="bg-white p-3 rounded-md border border-gray-200 whitespace-pre-line">
-                      {card.explanation}
-                    </div>
-                  </div>
-                )}
-                
-                {card.videoUrl && (
-                  <div className="mt-4">
-                    <h3 className="font-semibold mb-2">Video Explanation:</h3>
-                    <a 
-                      href={card.videoUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-blue-500 hover:underline block p-3 bg-white rounded-md border border-gray-200"
-                    >
-                      <div className="flex items-center">
-                        <div className="mr-2 text-red-500">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
-                            <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
-                          </svg>
-                        </div>
-                        <span>Watch video explanation</span>
-                      </div>
-                    </a>
-                  </div>
-                )}
-                
-                <div className="mt-6 flex justify-center">
-                  <button 
-                    className="px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                    onClick={() => {
-                      // If we're on the last card, go to summary
-                      if (currentCardIndex === currentTopic.cards.length - 1) {
-                        prepareSummaryData();
-                        setView('summary');
-                        setTimerActive(false);
-                      } else {
-                        nextCard();
-                      }
-                    }}
-                  >
-                    {currentCardIndex === currentTopic.cards.length - 1 
-                      ? "Finish & See Summary" 
-                      : "Next Card"}
-                  </button>
+            <div className={`card-back ${
+              isDarkMode 
+                ? 'bg-blue-900 border-blue-800' 
+                : 'bg-blue-50 border-blue-100'
+            } shadow-lg border rounded-xl p-6 overflow-auto`}>
+              <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>Answer:</h3>
+              <div className={`mb-4 p-3 ${
+                isDarkMode 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-blue-100'
+              } rounded-lg shadow-sm font-medium text-lg ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                {card.answer}
+              </div>
+              
+              {card.answerImageUrl && (
+                <div className="my-6 flex justify-center">
+                  <img 
+                    src={card.answerImageUrl} 
+                    alt="Answer illustration" 
+                    className="max-h-40 rounded-lg shadow-md"
+                  />
                 </div>
+              )}
+              
+              {card.explanation && (
+                <div className="mt-6">
+                  <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>Solution:</h3>
+                  <div className={`p-4 ${
+                    isDarkMode 
+                      ? 'bg-gray-800 border border-gray-700' 
+                      : 'bg-white border border-blue-100'
+                  } rounded-lg shadow-sm whitespace-pre-line ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    {card.explanation}
+                  </div>
+                </div>
+              )}
+              
+              {card.videoUrl && (
+                <div className="mt-6">
+                  <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>Video Explanation:</h3>
+                  <a 
+                    href={card.videoUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className={`block p-4 ${
+                      isDarkMode 
+                        ? 'bg-gray-800 border border-gray-700 hover:bg-gray-700' 
+                        : 'bg-white border border-blue-100 hover:bg-blue-50'
+                    } rounded-lg shadow-sm transition-colors`}
+                  >
+                    <div className="flex items-center">
+                      <div className="mr-3 text-red-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path>
+                          <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon>
+                        </svg>
+                      </div>
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} font-medium`}>Watch video explanation</span>
+                    </div>
+                  </a>
+                </div>
+              )}
+              
+              <div className="mt-8 flex justify-center">
+                <button 
+                  className={`px-8 py-3 ${
+                    isDarkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white rounded-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1`}
+                  onClick={() => {
+                    // If we're on the last card, go to summary
+                    if (currentCardIndex === currentTopic.cards.length - 1) {
+                      prepareSummaryData();
+                      setView('summary');
+                      setTimerActive(false);
+                    } else {
+                      nextCard();
+                    }
+                  }}
+                >
+                  {currentCardIndex === currentTopic.cards.length - 1 
+                    ? "Finish & See Summary" 
+                    : "Next Card"}
+                </button>
               </div>
             </div>
           </div>
         </div>
         
         {/* Navigation controls */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center fade-in">
           <button 
-            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md disabled:opacity-50"
+            className={`px-4 py-2 ${
+              isDarkMode 
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+            } rounded-lg flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
             onClick={prevCard}
             disabled={currentCardIndex === 0}
           >
+            <ChevronLeft size={18} className="mr-1" />
             Previous
           </button>
           
-          <div className="text-sm text-gray-500">
+          <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} italic`}>
             {answerStatus === null ? "Enter your answer and check" : isFlipped ? "Review the solution" : "Check your answer then view solution"}
           </div>
           
           <button 
-            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md"
+            className={`px-4 py-2 ${
+              isDarkMode 
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+            } rounded-lg transition-colors`}
             onClick={skipCard}
           >
             Skip
+            <ChevronRight size={18} className="ml-1 inline" />
           </button>
         </div>
         
         {/* Teacher controls */}
         {mode === 'teacher' && (
-          <div className="flex justify-center mt-4 space-x-4">
+          <div className="flex justify-center mt-8 space-x-4 fade-in">
             <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-md"
+              className={`px-5 py-2 ${
+                isDarkMode 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } text-white rounded-lg shadow-md transition-colors flex items-center`}
               onClick={createNewCard}
             >
+              <Plus size={18} className="mr-2" />
               Add Card
             </button>
             {card && (
               <>
                 <button 
-                  className="px-4 py-2 bg-yellow-500 text-white rounded-md"
+                  className={`px-5 py-2 ${
+                    isDarkMode 
+                      ? 'bg-yellow-600 hover:bg-yellow-700' 
+                      : 'bg-yellow-500 hover:bg-yellow-600'
+                  } text-white rounded-lg shadow-md transition-colors`}
                   onClick={() => editCard(card)}
                 >
                   Edit Card
                 </button>
                 <button 
-                  className="px-4 py-2 bg-red-500 text-white rounded-md"
+                  className={`px-5 py-2 ${
+                    isDarkMode 
+                      ? 'bg-red-600 hover:bg-red-700' 
+                      : 'bg-red-500 hover:bg-red-600'
+                  } text-white rounded-lg shadow-md transition-colors`}
                   onClick={() => deleteCard(card.id)}
                 >
                   Delete Card
@@ -1536,10 +2036,14 @@ function MathsFlashApp() {
               </>
             )}
             <button 
-              className="px-4 py-2 bg-green-500 text-white rounded-md flex items-center"
+              className={`px-5 py-2 ${
+                isDarkMode 
+                  ? 'bg-green-600 hover:bg-green-700' 
+                  : 'bg-green-500 hover:bg-green-600'
+              } text-white rounded-lg shadow-md transition-colors flex items-center`}
               onClick={() => setView('import')}
             >
-              <FileSpreadsheet size={18} className="mr-1" />
+              <FileSpreadsheet size={18} className="mr-2" />
               Import from Excel
             </button>
           </div>
@@ -1547,66 +2051,107 @@ function MathsFlashApp() {
       </div>
     );
   }
+  }
   
   function renderSummary() {
     if (!summaryData) {
       prepareSummaryData();
-      return <div className="p-4 text-center">Preparing your summary...</div>;
+      return (
+        <div className={`p-16 text-center ${isDarkMode ? 'dark-mode' : ''}`}>
+          <div className="animate-pulse flex flex-col items-center">
+            <div className={`h-10 w-64 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-lg mb-8`}></div>
+            <div className={`h-6 w-48 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-lg mb-4`}></div>
+            <div className={`h-32 w-full max-w-md ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-lg`}></div>
+          </div>
+        </div>
+      );
     }
     
     return (
-      <div className="p-4 max-w-4xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Header section */}
-          <div className="bg-blue-600 text-white p-6">
-            <div className="flex items-center justify-between">
+      <div className={`p-4 max-w-4xl mx-auto ${isDarkMode ? 'dark-mode' : ''}`}>
+        <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg overflow-hidden fade-in`}>
+          {/* Header section with gradient */}
+          <div className={`${
+            isDarkMode 
+              ? 'bg-gradient-to-r from-blue-900 to-indigo-900' 
+              : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+          } text-white p-8 relative overflow-hidden`}>
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mt-16 -mr-16"></div>
+            <div className="flex items-center justify-between relative z-10">
               <div className="flex items-center">
-                <div className="text-white mr-3">
+                <div className="p-3 bg-white bg-opacity-20 rounded-full mr-4">
                   {topicIcons[summaryData.icon]}
                 </div>
-                <h2 className="text-2xl font-bold">{summaryData.topicName} - Performance Summary</h2>
+                <div>
+                  <h2 className="text-3xl font-bold">{summaryData.topicName}</h2>
+                  <p className="text-blue-100 mt-1">Performance Summary</p>
+                </div>
               </div>
-              <div className="bg-white text-blue-800 rounded-full w-16 h-16 flex items-center justify-center font-bold text-2xl border-4 border-white">
+              <div className={`${
+                summaryData.grade.letter === 'A' ? 'bg-green-500' :
+                summaryData.grade.letter === 'B' ? 'bg-green-400' :
+                summaryData.grade.letter === 'C' ? 'bg-yellow-500' :
+                summaryData.grade.letter === 'D' ? 'bg-yellow-400' :
+                'bg-red-500'
+              } text-white rounded-full w-20 h-20 flex items-center justify-center font-bold text-3xl shadow-lg border-4 border-white border-opacity-20`}>
                 {summaryData.grade.letter}
               </div>
             </div>
           </div>
           
-          {/* Overall stats */}
-          <div className="p-6 border-b">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-1">
+          {/* Overall stats with cards */}
+          <div className="p-6 md:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className={`${
+                isDarkMode 
+                  ? 'bg-blue-900 border border-blue-800' 
+                  : 'bg-blue-50 border border-blue-100'
+              } p-6 rounded-xl text-center shadow-sm`}>
+                <div className={`text-4xl font-bold ${isDarkMode ? 'text-blue-300' : 'text-blue-600'} mb-2`}>
                   {summaryData.overallCorrectPercentage}%
                 </div>
-                <div className="text-sm text-gray-500">Overall Score</div>
+                <div className={`text-sm ${isDarkMode ? 'text-blue-200' : 'text-blue-500'} font-medium`}>Overall Score</div>
               </div>
               
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-green-600 mb-1">
+              <div className={`${
+                isDarkMode 
+                  ? 'bg-green-900 border border-green-800' 
+                  : 'bg-green-50 border border-green-100'
+              } p-6 rounded-xl text-center shadow-sm`}>
+                <div className={`text-4xl font-bold ${isDarkMode ? 'text-green-300' : 'text-green-600'} mb-2`}>
                   {summaryData.correct}
                 </div>
-                <div className="text-sm text-gray-500">Correct Answers</div>
+                <div className={`text-sm ${isDarkMode ? 'text-green-200' : 'text-green-500'} font-medium`}>Correct Answers</div>
               </div>
               
-              <div className="bg-red-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-red-600 mb-1">
+              <div className={`${
+                isDarkMode 
+                  ? 'bg-red-900 border border-red-800' 
+                  : 'bg-red-50 border border-red-100'
+              } p-6 rounded-xl text-center shadow-sm`}>
+                <div className={`text-4xl font-bold ${isDarkMode ? 'text-red-300' : 'text-red-600'} mb-2`}>
                   {summaryData.incorrect}
                 </div>
-                <div className="text-sm text-gray-500">Incorrect Answers</div>
+                <div className={`text-sm ${isDarkMode ? 'text-red-200' : 'text-red-500'} font-medium`}>Incorrect Answers</div>
               </div>
               
-              <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <div className="text-3xl font-bold text-gray-600 mb-1">
+              <div className={`${
+                isDarkMode 
+                  ? 'bg-gray-700 border border-gray-600' 
+                  : 'bg-gray-50 border border-gray-200'
+              } p-6 rounded-xl text-center shadow-sm`}>
+                <div className={`text-4xl font-bold ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-2`}>
                   {formatTime(summaryData.timeTaken)}
                 </div>
-                <div className="text-sm text-gray-500">Time Taken</div>
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} font-medium`}>Time Taken</div>
               </div>
             </div>
             
-            <div className="mt-4 text-center">
-              <div className="text-lg font-bold mb-2">{summaryData.grade.comment}</div>
-              <p className="text-gray-600">
+            <div className="mt-6 text-center">
+              <div className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                {summaryData.grade.comment}
+              </div>
+              <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                 You attempted {summaryData.totalAttempted} out of {summaryData.totalCards} questions.
                 {summaryData.skipped > 0 && ` You skipped ${summaryData.skipped} questions.`}
               </p>
@@ -1614,58 +2159,29 @@ function MathsFlashApp() {
           </div>
           
           {/* Strengths and weaknesses */}
-          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-200">
             {/* Strengths section */}
             <div>
-              <h3 className="text-lg font-bold mb-3 flex items-center">
-                <Award size={20} className="text-yellow-500 mr-2" /> Your Strengths
-              </h3>
-              
-              {summaryData.strengths.length > 0 ? (
-                <ul className="space-y-2">
-                  {summaryData.strengths.map(subtopic => (
-                    <li key={subtopic} className="bg-green-50 p-3 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">{subtopic}</span>
-                        <span className="text-green-600 font-medium">
-                          {summaryData.subtopicsAnalysis[subtopic].correctPercentage}% correct
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                        <div 
-                          className="bg-green-500 h-2 rounded-full" 
-                          style={{ width: `${summaryData.subtopicsAnalysis[subtopic].correctPercentage}%` }}
-                        ></div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <div className="text-gray-500 italic">
-                  {summaryData.totalAttempted > 0 
-                    ? "Keep practicing to develop your strengths." 
-                    : "No questions attempted yet."}
-                </div>
-              )}
-            </div>
-            
-            {/* Areas to improve */}
-            <div>
-              <h3 className="text-lg font-bold mb-3 flex items-center">
-                <BookOpen size={20} className="text-blue-500 mr-2" /> Areas to Improve
+              <h3 className={`text-xl font-bold mb-4 flex items-center ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                <BookOpen size={22} className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} mr-2`} /> 
+                Areas to Improve
               </h3>
               
               {summaryData.weaknesses.length > 0 ? (
-                <ul className="space-y-2">
+                <ul className="space-y-3">
                   {summaryData.weaknesses.map(subtopic => (
-                    <li key={subtopic} className="bg-red-50 p-3 rounded-md">
-                      <div className="flex justify-between items-center">
-                        <span className="font-medium">{subtopic}</span>
-                        <span className="text-red-600 font-medium">
+                    <li key={subtopic} className={`${
+                      isDarkMode 
+                        ? 'bg-red-900 border border-red-800' 
+                        : 'bg-red-50 border border-red-100'
+                    } p-4 rounded-lg shadow-sm`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={`font-medium ${isDarkMode ? 'text-red-200' : 'text-red-700'}`}>{subtopic}</span>
+                        <span className={`font-medium ${isDarkMode ? 'text-red-300' : 'text-red-600'}`}>
                           {summaryData.subtopicsAnalysis[subtopic].correctPercentage}% correct
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                         <div 
                           className="bg-red-500 h-2 rounded-full" 
                           style={{ width: `${summaryData.subtopicsAnalysis[subtopic].correctPercentage}%` }}
@@ -1675,7 +2191,11 @@ function MathsFlashApp() {
                   ))}
                 </ul>
               ) : (
-                <div className="text-gray-500 italic">
+                <div className={`p-6 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border border-gray-600' 
+                    : 'bg-gray-50 border border-gray-200'
+                } rounded-lg text-center italic ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                   {summaryData.totalAttempted > 0 
                     ? "Great job! No significant weak areas identified." 
                     : "No questions attempted yet."}
@@ -1685,15 +2205,23 @@ function MathsFlashApp() {
           </div>
           
           {/* Recommendations */}
-          <div className="p-6 bg-gray-50 border-t">
-            <h3 className="text-lg font-bold mb-3">Recommended Next Steps</h3>
+          <div className={`p-6 md:p-8 ${
+            isDarkMode 
+              ? 'bg-gray-900 border-t border-gray-700' 
+              : 'bg-gray-50 border-t border-gray-200'
+          }`}>
+            <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Recommended Next Steps</h3>
             
             {summaryData.recommendedTopics.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {summaryData.recommendedTopics.map(topic => (
                   <div 
                     key={topic.id}
-                    className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500 cursor-pointer hover:shadow-lg transition-shadow"
+                    className={`${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-l-4 border-blue-600 hover:bg-gray-700' 
+                        : 'bg-white border-l-4 border-blue-500 hover:bg-blue-50'
+                    } rounded-lg shadow-sm p-5 cursor-pointer hover:shadow-md transition-all duration-300`}
                     onClick={() => {
                       const fullTopic = topics.find(t => t.id === topic.id);
                       if (fullTopic) {
@@ -1702,32 +2230,47 @@ function MathsFlashApp() {
                     }}
                   >
                     <div className="flex items-center mb-2">
-                      <div className="text-blue-500 mr-2">
-                        {topicIcons[topic.icon]}
+                      <div className={`p-2 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-100'} rounded-full mr-3`}>
+                        <div className={isDarkMode ? 'text-blue-300' : 'text-blue-500'}>
+                          {topicIcons[topic.icon]}
+                        </div>
                       </div>
-                      <h4 className="font-semibold">{topic.title}</h4>
+                      <h4 className={`font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{topic.title}</h4>
                     </div>
-                    <p className="text-sm text-gray-600">{topic.reason}</p>
+                    <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} ml-9`}>{topic.reason}</p>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-gray-500 italic">
+              <div className={`p-6 ${
+                isDarkMode 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-gray-200'
+              } rounded-lg text-center italic ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
                 No specific recommendations at this time.
               </div>
             )}
           </div>
           
           {/* Action buttons */}
-          <div className="p-6 flex justify-between border-t">
+          <div className={`p-6 md:p-8 flex justify-between border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <button 
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className={`px-6 py-3 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              } rounded-lg shadow-sm hover:shadow transition-colors flex items-center`}
               onClick={goToTopics}
             >
+              <ChevronLeft size={18} className="mr-2" />
               Return to Topics
             </button>
             <button 
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className={`px-6 py-3 ${
+                isDarkMode 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } text-white rounded-lg shadow-sm hover:shadow-md transition-all`}
               onClick={() => {
                 selectTopic(currentTopic); // Restart the same topic
               }}
@@ -1744,148 +2287,244 @@ function MathsFlashApp() {
     if (!editingCard) return null;
     
     return (
-      <div className="p-4 max-w-2xl mx-auto">
-        <h2 className="text-xl font-bold mb-6">
-          {editingCard.id ? 'Edit Card' : 'Create New Card'}
-        </h2>
-        
-        <div className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Question</label>
-            <textarea
-              value={editingCard.question || ''}
-              onChange={(e) => setEditingCard({...editingCard, question: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              rows={3}
-            />
+      <div className={`p-6 max-w-2xl mx-auto ${isDarkMode ? 'dark-mode' : ''}`}>
+        <div className={`bg-white rounded-xl shadow-lg overflow-hidden ${isDarkMode ? 'dark-mode' : ''}`}>
+          <div className={`${
+            isDarkMode 
+              ? 'bg-gradient-to-r from-blue-900 to-indigo-900' 
+              : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+          } text-white p-6`}>
+            <h2 className="text-xl font-bold">
+              {editingCard.id ? 'Edit Card' : 'Create New Card'}
+            </h2>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Subtopic/Category</label>
-            <input
-              type="text"
-              value={editingCard.subtopic || 'General'}
-              onChange={(e) => setEditingCard({...editingCard, subtopic: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="e.g. Algebra, Fractions, Linear Equations"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Group similar questions together for better performance tracking
-            </p>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Question Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e, true)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-            {editingCard.imageUrl && (
-              <div className="mt-2 p-2 border rounded-md bg-gray-50">
-                <p className="text-xs text-gray-500 mb-1">Image Preview:</p>
-                <img src={editingCard.imageUrl} alt="Preview" className="max-h-32" />
-              </div>
-            )}
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hint</label>
-            <textarea
-              value={editingCard.hint || ''}
-              onChange={(e) => setEditingCard({...editingCard, hint: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              rows={2}
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Answer</label>
-            <textarea
-              value={editingCard.answer || ''}
-              onChange={(e) => setEditingCard({...editingCard, answer: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              rows={2}
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Acceptable Answers (comma separated, optional)
-            </label>
-            <textarea
-              value={(editingCard.acceptableAnswers || []).join(', ')}
-              onChange={(e) => {
-                const answers = e.target.value
-                  .split(',')
-                  .map(a => a.trim())
-                  .filter(a => a);
-                setEditingCard({...editingCard, acceptableAnswers: answers});
-              }}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              rows={2}
-              placeholder="e.g. 4, x=4, x = 4"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              List alternative correct answers here. The main answer will be added automatically.
-            </p>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Answer Image</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => handleImageUpload(e, false)}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-            {editingCard.answerImageUrl && (
-              <div className="mt-2 p-2 border rounded-md bg-gray-50">
-                <p className="text-xs text-gray-500 mb-1">Image Preview:</p>
-                <img src={editingCard.answerImageUrl} alt="Preview" className="max-h-32" />
-              </div>
-            )}
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Solution/Explanation</label>
-            <textarea
-              value={editingCard.explanation || ''}
-              onChange={(e) => setEditingCard({...editingCard, explanation: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              rows={4}
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Video URL</label>
-            <input
-              type="text"
-              value={editingCard.videoUrl || ''}
-              onChange={(e) => setEditingCard({...editingCard, videoUrl: e.target.value})}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
-            />
-          </div>
-          
-          <div className="flex justify-between pt-4">
-            <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-              onClick={() => {
-                setEditingCard(null);
-                setView('cards');
-              }}
-            >
-              Cancel
-            </button>
+          <div className="p-6 space-y-6">
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Question</label>
+              <textarea
+                value={editingCard.question || ''}
+                onChange={(e) => setEditingCard({...editingCard, question: e.target.value})}
+                className={`w-full p-3 border ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                rows={3}
+                placeholder="Enter the question here..."
+              />
+            </div>
             
-            <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              onClick={saveCard}
-            >
-              Save Card
-            </button>
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Subtopic/Category</label>
+              <input
+                type="text"
+                value={editingCard.subtopic || 'General'}
+                onChange={(e) => setEditingCard({...editingCard, subtopic: e.target.value})}
+                className={`w-full p-3 border ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                placeholder="e.g. Algebra, Fractions, Linear Equations"
+              />
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                Group similar questions together for better performance tracking
+              </p>
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Question Image</label>
+              <div className={`p-4 border-2 border-dashed ${
+                isDarkMode 
+                  ? 'border-gray-600 bg-gray-800' 
+                  : 'border-gray-300 bg-gray-50'
+              } rounded-lg flex flex-col items-center`}>
+                <Image size={24} className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2 mb-3`}>
+                  Upload an image to illustrate the question
+                </p>
+                
+                <input
+                  type="file"
+                  id="question-image"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e, true)}
+                />
+                
+                <label
+                  htmlFor="question-image"
+                  className={`px-4 py-2 ${
+                    isDarkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white rounded-lg cursor-pointer transition-colors`}
+                >
+                  Choose Image
+                </label>
+                
+                {editingCard.imageUrl && (
+                  <div className="mt-4 w-full">
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Image Preview:</p>
+                    <img src={editingCard.imageUrl} alt="Preview" className="max-h-40 mx-auto rounded-lg" />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Hint</label>
+              <textarea
+                value={editingCard.hint || ''}
+                onChange={(e) => setEditingCard({...editingCard, hint: e.target.value})}
+                className={`w-full p-3 border ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                rows={2}
+                placeholder="Provide a hint to help students solve the problem"
+              />
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Answer</label>
+              <textarea
+                value={editingCard.answer || ''}
+                onChange={(e) => setEditingCard({...editingCard, answer: e.target.value})}
+                className={`w-full p-3 border ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                rows={2}
+                placeholder="The correct answer to the question"
+              />
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                Acceptable Answers (comma separated, optional)
+              </label>
+              <textarea
+                value={(editingCard.acceptableAnswers || []).join(', ')}
+                onChange={(e) => {
+                  const answers = e.target.value
+                    .split(',')
+                    .map(a => a.trim())
+                    .filter(a => a);
+                  setEditingCard({...editingCard, acceptableAnswers: answers});
+                }}
+                className={`w-full p-3 border ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                rows={2}
+                placeholder="e.g. 4, x=4, x = 4"
+              />
+              <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                List alternative correct answers here. The main answer will be added automatically.
+              </p>
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Answer Image</label>
+              <div className={`p-4 border-2 border-dashed ${
+                isDarkMode 
+                  ? 'border-gray-600 bg-gray-800' 
+                  : 'border-gray-300 bg-gray-50'
+              } rounded-lg flex flex-col items-center`}>
+                <Image size={24} className={isDarkMode ? 'text-gray-500' : 'text-gray-400'} />
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2 mb-3`}>
+                  Upload an image to illustrate the answer
+                </p>
+                
+                <input
+                  type="file"
+                  id="answer-image"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => handleImageUpload(e, false)}
+                />
+                
+                <label
+                  htmlFor="answer-image"
+                  className={`px-4 py-2 ${
+                    isDarkMode 
+                      ? 'bg-blue-600 hover:bg-blue-700' 
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  } text-white rounded-lg cursor-pointer transition-colors`}
+                >
+                  Choose Image
+                </label>
+                
+                {editingCard.answerImageUrl && (
+                  <div className="mt-4 w-full">
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-2`}>Image Preview:</p>
+                    <img src={editingCard.answerImageUrl} alt="Preview" className="max-h-40 mx-auto rounded-lg" />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Solution/Explanation</label>
+              <textarea
+                value={editingCard.explanation || ''}
+                onChange={(e) => setEditingCard({...editingCard, explanation: e.target.value})}
+                className={`w-full p-3 border ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                rows={4}
+                placeholder="Provide a detailed explanation of the solution"
+              />
+            </div>
+            
+            <div>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Video URL</label>
+              <input
+                type="text"
+                value={editingCard.videoUrl || ''}
+                onChange={(e) => setEditingCard({...editingCard, videoUrl: e.target.value})}
+                className={`w-full p-3 border ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-700 text-white' 
+                    : 'border-gray-300'
+                } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                placeholder="https://www.youtube.com/watch?v=VIDEO_ID"
+              />
+            </div>
+            
+            <div className="flex justify-between pt-4">
+              <button
+                className={`px-5 py-3 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                } rounded-lg transition-colors`}
+                onClick={() => {
+                  setEditingCard(null);
+                  setView('cards');
+                }}
+              >
+                Cancel
+              </button>
+              
+              <button
+                className={`px-5 py-3 ${
+                  isDarkMode 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-blue-500 hover:bg-blue-600'
+                } text-white rounded-lg shadow-sm hover:shadow transition-colors`}
+                onClick={saveCard}
+              >
+                Save Card
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -1894,20 +2533,38 @@ function MathsFlashApp() {
   
   function renderLogin() {
     return (
-      <div className="flex items-center justify-center min-h-64 p-4">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-          <div className="flex items-center justify-center mb-6">
-            <h2 className="text-xl font-bold">Teacher Login</h2>
+      <div className={`flex items-center justify-center min-h-screen p-4 ${isDarkMode ? 'dark-mode' : ''}`}>
+        <div className={`${
+          isDarkMode 
+            ? 'bg-gray-800 border border-gray-700' 
+            : 'bg-white'
+        } rounded-xl shadow-xl p-8 w-full max-w-md fade-in`}>
+          <div className="flex flex-col items-center justify-center mb-8">
+            <div className={`w-16 h-16 flex items-center justify-center rounded-full mb-4 ${
+              isDarkMode 
+                ? 'bg-blue-900' 
+                : 'bg-blue-100'
+            }`}>
+              <svg xmlns="http://www.w3.org/2000/svg" className={`h-8 w-8 ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Teacher Login</h2>
+            <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>Enter your password to access teacher mode</p>
           </div>
           
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+          <div className="mb-6">
+            <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Password</label>
             <input
               ref={passwordInputRef}
               type="password"
               value={passwordInput}
               onChange={(e) => setPasswordInput(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={`w-full p-3 border ${
+                isDarkMode 
+                  ? 'border-gray-600 bg-gray-700 text-white' 
+                  : 'border-gray-300'
+              } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
               placeholder="Enter teacher password"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
@@ -1917,20 +2574,33 @@ function MathsFlashApp() {
               }}
             />
             {passwordError && (
-              <p className="text-red-500 text-sm mt-1">{passwordError}</p>
+              <p className="text-red-500 text-sm mt-2 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                {passwordError}
+              </p>
             )}
           </div>
           
           <div className="flex justify-between items-center pt-2">
             <button
-              className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+              className={`px-5 py-3 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              } rounded-lg transition-colors`}
               onClick={() => setView('topics')}
             >
               Cancel
             </button>
             
             <button
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+              className={`px-5 py-3 ${
+                isDarkMode 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } text-white rounded-lg shadow-sm hover:shadow transition-colors`}
               onClick={login}
             >
               Login
@@ -1943,276 +2613,404 @@ function MathsFlashApp() {
   
   function renderImport() {
     return (
-      <div className="p-4 max-w-3xl mx-auto">
-        <h2 className="text-xl font-bold mb-6">
-          Import Questions from Excel for "{currentTopic?.title}"
-        </h2>
-        
-        <div className="bg-white rounded-lg shadow-md p-6">
-          {!sheetData ? (
-            <div className="space-y-6">
-              <div className="text-gray-700">
-                <p className="mb-4">Upload an Excel file (.xlsx, .xls) containing your questions and answers.</p>
-                <p className="mb-2">Your spreadsheet should include:</p>
-                <ul className="list-disc pl-5 mb-4 space-y-1">
-                  <li>A header row with column names (e.g., "Question", "Answer", etc.)</li>
-                  <li><strong>Required:</strong> Columns for questions and answers</li>
-                  <li><strong>Optional:</strong> Columns for hints, explanations, acceptable alternative answers, subtopics, and video URLs</li>
-                </ul>
-              </div>
-              
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <div className="text-gray-500 mb-4">
-                  <Upload size={40} className="mx-auto mb-2" />
-                  <p>Drag and drop your Excel file here, or click to browse</p>
+      <div className={`p-6 max-w-4xl mx-auto ${isDarkMode ? 'dark-mode' : ''}`}>
+        <div className={`bg-white rounded-xl shadow-lg overflow-hidden ${isDarkMode ? 'dark-mode' : ''}`}>
+          <div className={`${
+            isDarkMode 
+              ? 'bg-gradient-to-r from-green-900 to-teal-900' 
+              : 'bg-gradient-to-r from-green-500 to-teal-500'
+          } text-white p-6`}>
+            <h2 className="text-xl font-bold flex items-center">
+              <FileSpreadsheet size={22} className="mr-2" />
+              Import Questions from Excel for "{currentTopic?.title}"
+            </h2>
+          </div>
+          
+          <div className="p-6">
+            {!sheetData ? (
+              <div className="space-y-6">
+                <div className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  <p className="mb-4">Upload an Excel file (.xlsx, .xls) containing your questions and answers.</p>
+                  <p className="mb-2">Your spreadsheet should include:</p>
+                  <ul className="list-disc pl-5 mb-4 space-y-2">
+                    <li>A header row with column names (e.g., "Question", "Answer", etc.)</li>
+                    <li><strong>Required:</strong> Columns for questions and answers</li>
+                    <li><strong>Optional:</strong> Columns for hints, explanations, acceptable alternative answers, subtopics, and video URLs</li>
+                  </ul>
                 </div>
                 
-                <input
-                  type="file"
-                  id="excel-upload"
-                  accept=".xlsx, .xls"
-                  className="hidden"
-                  onChange={handleExcelUpload}
-                />
-                
-                <label
-                  htmlFor="excel-upload"
-                  className="inline-block px-4 py-2 bg-blue-500 text-white rounded-md cursor-pointer hover:bg-blue-600"
-                >
-                  Select Excel File
-                </label>
-              </div>
-              
-              {importError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md">
-                  {importError}
-                </div>
-              )}
-              
-              <div className="flex justify-between pt-4">
-                <button
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  onClick={() => setView('cards')}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              <div className="border-b pb-4 mb-4">
-                <div className="flex items-center text-sm text-gray-500 mb-2">
-                  <FileSpreadsheet size={16} className="mr-1" />
-                  <span>{importFile.name}</span>
-                </div>
-                <p className="font-medium">Found {sheetData.rows.length} rows of data. Please map your columns below:</p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Question Column <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={columnMappings.question}
-                      onChange={(e) => setColumnMappings({...columnMappings, question: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
+                <div className={`border-2 border-dashed ${
+                  isDarkMode 
+                    ? 'border-gray-600 bg-gray-800' 
+                    : 'border-gray-300 bg-gray-50'
+                } rounded-xl p-10 text-center`}>
+                  <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-6`}>
+                    <Upload size={50} className="mx-auto mb-4" />
+                    <p className="text-lg">Drag and drop your Excel file here, or click to browse</p>
                   </div>
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Answer Column <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={columnMappings.answer}
-                      onChange={(e) => setColumnMappings({...columnMappings, answer: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                      required
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <input
+                    type="file"
+                    id="excel-upload"
+                    accept=".xlsx, .xls"
+                    className="hidden"
+                    onChange={handleExcelUpload}
+                  />
                   
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Hint Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.hint}
-                      onChange={(e) => setColumnMappings({...columnMappings, hint: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Subtopic/Category Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.subtopic}
-                      onChange={(e) => setColumnMappings({...columnMappings, subtopic: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <label
+                    htmlFor="excel-upload"
+                    className={`inline-block px-6 py-3 ${
+                      isDarkMode 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-green-500 hover:bg-green-600'
+                    } text-white rounded-lg cursor-pointer transition-colors shadow-sm hover:shadow`}
+                  >
+                    Select Excel File
+                  </label>
                 </div>
                 
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Explanation/Solution Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.explanation}
-                      onChange={(e) => setColumnMappings({...columnMappings, explanation: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
+                {importError && (
+                  <div className={`p-4 ${
+                    isDarkMode 
+                      ? 'bg-red-900 border border-red-800' 
+                      : 'bg-red-50 border border-red-200'
+                  } text-${isDarkMode ? 'red-200' : 'red-600'} rounded-lg flex items-start`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    {importError}
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Acceptable Answers Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.acceptableAnswers}
-                      onChange={(e) => setColumnMappings({...columnMappings, acceptableAnswers: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      This can be a comma-separated list of alternate answers
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Video URL Column (optional)
-                    </label>
-                    <select
-                      value={columnMappings.videoUrl}
-                      onChange={(e) => setColumnMappings({...columnMappings, videoUrl: e.target.value})}
-                      className="w-full p-2 border border-gray-300 rounded-md"
-                    >
-                      <option value="">Select column</option>
-                      {sheetData.headers.map((header, index) => (
-                        <option key={index} value={index}>{header}</option>
-                      ))}
-                    </select>
-                  </div>
+                )}
+                
+                <div className="flex justify-between pt-4">
+                  <button
+                    className={`px-5 py-3 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    } rounded-lg transition-colors`}
+                    onClick={() => setView('cards')}
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
-              
-              {/* Preview section */}
-              {columnMappings.question !== '' && columnMappings.answer !== '' && (
-                <div className="mt-4 border rounded-md overflow-hidden">
-                  <div className="bg-gray-50 p-3 border-b">
-                    <h3 className="font-medium">Data Preview</h3>
+            ) : (
+              <div className="space-y-6">
+                <div className={`border-b pb-4 mb-4 ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div className={`flex items-center text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mb-2`}>
+                    <FileSpreadsheet size={16} className="mr-1" />
+                    <span>{importFile.name}</span>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Question
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Answer
-                          </th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            {columnMappings.subtopic !== '' ? 'Subtopic' : 'Hint'}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {sheetData.rows.slice(0, 3).map((row, rowIndex) => (
-                          <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-4 py-2 text-sm whitespace-normal">
-                              {columnMappings.question !== '' ? row[columnMappings.question] || 'N/A' : 'Not mapped'}
-                            </td>
-                            <td className="px-4 py-2 text-sm">
-                              {columnMappings.answer !== '' ? row[columnMappings.answer] || 'N/A' : 'Not mapped'}
-                            </td>
-                            <td className="px-4 py-2 text-sm">
-                              {columnMappings.subtopic !== '' 
-                                ? (row[columnMappings.subtopic] || 'General') 
-                                : (columnMappings.hint !== '' ? row[columnMappings.hint] || 'N/A' : 'Not mapped')}
-                            </td>
-                          </tr>
+                  <p className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                    Found {sheetData.rows.length} rows of data. Please map your columns below:
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Question Column <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={columnMappings.question}
+                        onChange={(e) => setColumnMappings({...columnMappings, question: e.target.value})}
+                        className={`w-full p-3 border ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                        required
+                      >
+                        <option value="">Select column</option>
+                        {sheetData.headers.map((header, index) => (
+                          <option key={index} value={index}>{header}</option>
                         ))}
-                        {sheetData.rows.length > 3 && (
-                          <tr>
-                            <td colSpan="3" className="px-4 py-2 text-sm text-gray-500 text-center">
-                              Showing 3 of {sheetData.rows.length} rows
-                            </td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Answer Column <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={columnMappings.answer}
+                        onChange={(e) => setColumnMappings({...columnMappings, answer: e.target.value})}
+                        className={`w-full p-3 border ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                        required
+                      >
+                        <option value="">Select column</option>
+                        {sheetData.headers.map((header, index) => (
+                          <option key={index} value={index}>{header}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Hint Column (optional)
+                      </label>
+                      <select
+                        value={columnMappings.hint}
+                        onChange={(e) => setColumnMappings({...columnMappings, hint: e.target.value})}
+                        className={`w-full p-3 border ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                      >
+                        <option value="">Select column</option>
+                        {sheetData.headers.map((header, index) => (
+                          <option key={index} value={index}>{header}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Subtopic/Category Column (optional)
+                      </label>
+                      <select
+                        value={columnMappings.subtopic}
+                        onChange={(e) => setColumnMappings({...columnMappings, subtopic: e.target.value})}
+                        className={`w-full p-3 border ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                      >
+                        <option value="">Select column</option>
+                        {sheetData.headers.map((header, index) => (
+                          <option key={index} value={index}>{header}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Explanation/Solution Column (optional)
+                      </label>
+                      <select
+                        value={columnMappings.explanation}
+                        onChange={(e) => setColumnMappings({...columnMappings, explanation: e.target.value})}
+                        className={`w-full p-3 border ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                      >
+                        <option value="">Select column</option>
+                        {sheetData.headers.map((header, index) => (
+                          <option key={index} value={index}>{header}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Acceptable Answers Column (optional)
+                      </label>
+                      <select
+                        value={columnMappings.acceptableAnswers}
+                        onChange={(e) => setColumnMappings({...columnMappings, acceptableAnswers: e.target.value})}
+                        className={`w-full p-3 border ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                      >
+                        <option value="">Select column</option>
+                        {sheetData.headers.map((header, index) => (
+                          <option key={index} value={index}>{header}</option>
+                        ))}
+                      </select>
+                      <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-1`}>
+                        This can be a comma-separated list of alternate answers
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>
+                        Video URL Column (optional)
+                      </label>
+                      <select
+                        value={columnMappings.videoUrl}
+                        onChange={(e) => setColumnMappings({...columnMappings, videoUrl: e.target.value})}
+                        className={`w-full p-3 border ${
+                          isDarkMode 
+                            ? 'border-gray-600 bg-gray-700 text-white' 
+                            : 'border-gray-300 bg-white text-gray-800'
+                        } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition`}
+                      >
+                        <option value="">Select column</option>
+                        {sheetData.headers.map((header, index) => (
+                          <option key={index} value={index}>{header}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
-              )}
-              
-              {importError && (
-                <div className="p-3 bg-red-50 border border-red-200 text-red-600 rounded-md">
-                  {importError}
+                
+                {/* Preview section */}
+                {columnMappings.question !== '' && columnMappings.answer !== '' && (
+                  <div className="mt-6">
+                    <div className={`${
+                      isDarkMode 
+                        ? 'bg-gray-700 border-b border-gray-600' 
+                        : 'bg-gray-50 border-b border-gray-200'
+                    } p-4 rounded-t-lg`}>
+                      <h3 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>Data Preview</h3>
+                    </div>
+                    <div className={`overflow-x-auto ${
+                      isDarkMode 
+                        ? 'border border-gray-700 bg-gray-800' 
+                        : 'border border-gray-200 bg-white'
+                    } rounded-b-lg`}>
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className={isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}>
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Question
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Answer
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              {columnMappings.subtopic !== '' ? 'Subtopic' : 'Hint'}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className={`${isDarkMode ? 'divide-y divide-gray-700' : 'divide-y divide-gray-200'}`}>
+                          {sheetData.rows.slice(0, 3).map((row, rowIndex) => (
+                            <tr key={rowIndex} className={rowIndex % 2 === 0 ? (isDarkMode ? 'bg-gray-800' : 'bg-white') : (isDarkMode ? 'bg-gray-900' : 'bg-gray-50')}>
+                              <td className={`px-4 py-3 text-sm whitespace-normal ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                                {columnMappings.question !== '' ? row[columnMappings.question] || 'N/A' : 'Not mapped'}
+                              </td>
+                              <td className={`px-4 py-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                                {columnMappings.answer !== '' ? row[columnMappings.answer] || 'N/A' : 'Not mapped'}
+                              </td>
+                              <td className={`px-4 py-3 text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                                {columnMappings.subtopic !== '' 
+                                  ? (row[columnMappings.subtopic] || 'General') 
+                                  : (columnMappings.hint !== '' ? row[columnMappings.hint] || 'N/A' : 'Not mapped')}
+                              </td>
+                            </tr>
+                          ))}
+                          {sheetData.rows.length > 3 && (
+                            <tr>
+                              <td colSpan="3" className={`px-4 py-3 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} text-center`}>
+                                Showing 3 of {sheetData.rows.length} rows
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+                
+                {importError && (
+                  <div className={`p-4 ${
+                    isDarkMode 
+                      ? 'bg-red-900 border border-red-800' 
+                      : 'bg-red-50 border border-red-200'
+                  } text-${isDarkMode ? 'red-200' : 'red-600'} rounded-lg flex items-start mt-6`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    {importError}
+                  </div>
+                )}
+                
+                <div className="flex justify-between pt-6">
+                  <button
+                    className={`px-5 py-3 ${
+                      isDarkMode 
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+                    } rounded-lg transition-colors`}
+                    onClick={cancelImport}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className={`px-5 py-3 ${
+                      isDarkMode 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : 'bg-green-500 hover:bg-green-600'
+                    } text-white rounded-lg shadow-sm hover:shadow transition-colors flex items-center ${
+                      columnMappings.question === '' || columnMappings.answer === '' 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : ''
+                    }`}
+                    onClick={importCards}
+                    disabled={columnMappings.question === '' || columnMappings.answer === ''}
+                  >
+                    <Upload size={18} className="mr-2" />
+                    Import Cards
+                  </button>
                 </div>
-              )}
-              
-              <div className="flex justify-between pt-4">
-                <button
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                  onClick={cancelImport}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center"
-                  onClick={importCards}
-                  disabled={columnMappings.question === '' || columnMappings.answer === ''}
-                >
-                  <Upload size={18} className="mr-1" />
-                  Import Cards
-                </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     );
   }
   
+  // Generate a circular progress indicator
+  function CircularProgress({ percentage, size = 36, strokeWidth = 3, color }) {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percentage / 100) * circumference;
+    
+    return (
+      <svg height={size} width={size} className="transform -rotate-90">
+        <circle
+          stroke="#e5e7eb"
+          fill="transparent"
+          strokeWidth={strokeWidth}
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <circle
+          stroke={color}
+          fill="transparent"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="progress-ring"
+        />
+        <text
+          x="50%"
+          y="50%"
+          dy=".3em"
+          textAnchor="middle"
+          fill={color}
+          fontSize={size / 4}
+          fontWeight="bold"
+        >
+          {percentage}%
+        </text>
+      </svg>
+    );
+  }
+  
   // Main render
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className={`min-h-screen ${isDarkMode ? 'dark-mode bg-gray-900' : 'bg-gray-50'} flex flex-col`}>
       {renderHeader()}
       <main className="flex-1">
         {view === 'topics' && renderTopics()}
@@ -2224,6 +3022,271 @@ function MathsFlashApp() {
         {view === 'import' && renderImport()}
         {view === 'summary' && renderSummary()}
       </main>
+      
+      {/* Footer */}
+      <footer className={`py-4 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'} text-center text-sm`}>
+        <div className="container mx-auto px-4">
+          <p>MathsFlash &copy; {new Date().getFullYear()} | An interactive mathematics learning tool</p>
+        </div>
+      </footer>
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={confirmDialog.onCancel}
+      />
+    </div>
+  );
+}
+
+const App = () => {
+  return (
+    <div className="h-screen w-full">
+      <MathsFlashApp />
+    </div>
+  );
+};
+
+export default App;-gray-800'}`}>
+                <Award size={22} className={`${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'} mr-2`} /> 
+                Your Strengths
+              </h3>
+              
+              {summaryData.strengths.length > 0 ? (
+                <ul className="space-y-3">
+                  {summaryData.strengths.map(subtopic => (
+                    <li key={subtopic} className={`${
+                      isDarkMode 
+                        ? 'bg-green-900 border border-green-800' 
+                        : 'bg-green-50 border border-green-100'
+                    } p-4 rounded-lg shadow-sm`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={`font-medium ${isDarkMode ? 'text-green-200' : 'text-green-700'}`}>{subtopic}</span>
+                        <span className={`font-medium ${isDarkMode ? 'text-green-300' : 'text-green-600'}`}>
+                          {summaryData.subtopicsAnalysis[subtopic].correctPercentage}% correct
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="bg-green-500 h-2 rounded-full" 
+                          style={{ width: `${summaryData.subtopicsAnalysis[subtopic].correctPercentage}%` }}
+                        ></div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className={`p-6 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border border-gray-600' 
+                    : 'bg-gray-50 border border-gray-200'
+                } rounded-lg text-center italic ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {summaryData.totalAttempted > 0 
+                    ? "Keep practicing to develop your strengths." 
+                    : "No questions attempted yet."}
+                </div>
+              )}
+            </div>
+            
+            {/* Areas to improve */}
+            <div>
+              <h3 className={`text-xl font-bold mb-4 flex items-center ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                <BookOpen size={22} className={`${isDarkMode ? 'text-blue-400' : 'text-blue-500'} mr-2`} /> 
+                Areas to Improve
+              </h3>
+              
+              {summaryData.weaknesses.length > 0 ? (
+                <ul className="space-y-3">
+                  {summaryData.weaknesses.map(subtopic => (
+                    <li key={subtopic} className={`${
+                      isDarkMode 
+                        ? 'bg-red-900 border border-red-800' 
+                        : 'bg-red-50 border border-red-100'
+                    } p-4 rounded-lg shadow-sm`}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className={`font-medium ${isDarkMode ? 'text-red-200' : 'text-red-700'}`}>{subtopic}</span>
+                        <span className={`font-medium ${isDarkMode ? 'text-red-300' : 'text-red-600'}`}>
+                          {summaryData.subtopicsAnalysis[subtopic].correctPercentage}% correct
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div 
+                          className="bg-red-500 h-2 rounded-full" 
+                          style={{ width: `${summaryData.subtopicsAnalysis[subtopic].correctPercentage}%` }}
+                        ></div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className={`p-6 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 border border-gray-600' 
+                    : 'bg-gray-50 border border-gray-200'
+                } rounded-lg text-center italic ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {summaryData.totalAttempted > 0 
+                    ? "Great job! No significant weak areas identified." 
+                    : "No questions attempted yet."}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Recommendations */}
+          <div className={`p-6 md:p-8 ${
+            isDarkMode 
+              ? 'bg-gray-900 border-t border-gray-700' 
+              : 'bg-gray-50 border-t border-gray-200'
+          }`}>
+            <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>Recommended Next Steps</h3>
+            
+            {summaryData.recommendedTopics.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {summaryData.recommendedTopics.map(topic => (
+                  <div 
+                    key={topic.id}
+                    className={`${
+                      isDarkMode 
+                        ? 'bg-gray-800 border-l-4 border-blue-600 hover:bg-gray-700' 
+                        : 'bg-white border-l-4 border-blue-500 hover:bg-blue-50'
+                    } rounded-lg shadow-sm p-5 cursor-pointer hover:shadow-md transition-all duration-300`}
+                    onClick={() => {
+                      const fullTopic = topics.find(t => t.id === topic.id);
+                      if (fullTopic) {
+                        selectTopic(fullTopic);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center mb-2">
+                      <div className={`p-2 ${isDarkMode ? 'bg-blue-900' : 'bg-blue-100'} rounded-full mr-3`}>
+                        <div className={isDarkMode ? 'text-blue-300' : 'text-blue-500'}>
+                          {topicIcons[topic.icon]}
+                        </div>
+                      </div>
+                      <h4 className={`font-bold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{topic.title}</h4>
+                    </div>
+                    <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'} ml-9`}>{topic.reason}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className={`p-6 ${
+                isDarkMode 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-gray-200'
+              } rounded-lg text-center italic ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                No specific recommendations at this time.
+              </div>
+            )}
+          </div>
+          
+          {/* Action buttons */}
+          <div className={`p-6 md:p-8 flex justify-between border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+            <button 
+              className={`px-6 py-3 ${
+                isDarkMode 
+                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+              } rounded-lg shadow-sm hover:shadow transition-colors flex items-center`}
+              onClick={goToTopics}
+            >
+              <ChevronLeft size={18} className="mr-2" />
+              Return to Topics
+            </button>
+            <button 
+              className={`px-6 py-3 ${
+                isDarkMode 
+                  ? 'bg-blue-600 hover:bg-blue-700' 
+                  : 'bg-blue-500 hover:bg-blue-600'
+              } text-white rounded-lg shadow-sm hover:shadow-md transition-all`}
+              onClick={() => {
+                selectTopic(currentTopic); // Restart the same topic
+              }}
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  
+  // Generate a circular progress indicator
+  function CircularProgress({ percentage, size = 36, strokeWidth = 3, color }) {
+    const radius = (size - strokeWidth) / 2;
+    const circumference = radius * 2 * Math.PI;
+    const offset = circumference - (percentage / 100) * circumference;
+    
+    return (
+      <svg height={size} width={size} className="transform -rotate-90">
+        <circle
+          stroke="#e5e7eb"
+          fill="transparent"
+          strokeWidth={strokeWidth}
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+        />
+        <circle
+          stroke={color}
+          fill="transparent"
+          strokeWidth={strokeWidth}
+          strokeLinecap="round"
+          r={radius}
+          cx={size / 2}
+          cy={size / 2}
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="progress-ring"
+        />
+        <text
+          x="50%"
+          y="50%"
+          dy=".3em"
+          textAnchor="middle"
+          fill={color}
+          fontSize={size / 4}
+          fontWeight="bold"
+        >
+          {percentage}%
+        </text>
+      </svg>
+    );
+  }
+  
+  // Main render
+  return (
+    <div className={`min-h-screen ${isDarkMode ? 'dark-mode bg-gray-900' : 'bg-gray-50'} flex flex-col`}>
+      {renderHeader()}
+      <main className="flex-1">
+        {view === 'topics' && renderTopics()}
+        {view === 'cards' && renderCards()}
+        {view === 'login' && renderLogin()}
+        {view === 'edit' && renderCardEditor()}
+        {view === 'newTopic' && renderNewTopic()}
+        {view === 'editTopic' && renderEditTopic()}
+        {view === 'import' && renderImport()}
+        {view === 'summary' && renderSummary()}
+      </main>
+      
+      {/* Footer */}
+      <footer className={`py-4 ${isDarkMode ? 'bg-gray-800 text-gray-400' : 'bg-gray-100 text-gray-600'} text-center text-sm`}>
+        <div className="container mx-auto px-4">
+          <p>MathsFlash &copy; {new Date().getFullYear()} | An interactive mathematics learning tool</p>
+        </div>
+      </footer>
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={confirmDialog.onCancel}
+      />
     </div>
   );
 }
