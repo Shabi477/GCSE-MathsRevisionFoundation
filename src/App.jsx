@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Calculator, Circle, Triangle, PenLine, Table, ChevronRight, Plus, Check, X, Upload, 
   FileSpreadsheet, BarChart, Award, BookOpen, Image, Square, Sigma, Percent, 
-  PieChart, LineChart, GitBranch, Divide, Function, Hash, Infinity as InfinityIcon, 
-  Binary, AlignJustify, Atom, Pi, Loader2, Recycle
+  PieChart, LineChart, GitBranch, Divide, Hash, 
+  AlignJustify, Atom, Loader2, Recycle
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './MathsFlash.css';
@@ -226,7 +226,7 @@ function MathsFlashApp() {
   const [animateCorrect, setAnimateCorrect] = useState(false);
   const [animateIncorrect, setAnimateIncorrect] = useState(false);
   
-  // Topic icons mapping
+  // Topic icons mapping - Removed Function and Infinity icons that aren't available
   const topicIcons = {
     calculator: <Calculator size={24} />,
     circle: <Circle size={24} />,
@@ -240,13 +240,13 @@ function MathsFlashApp() {
     lineChart: <LineChart size={24} />,
     gitBranch: <GitBranch size={24} />,
     divide: <Divide size={24} />,
-    function: <Function size={24} />,
+    // function: <Function size={24} />, // Not available in lucide-react
     hash: <Hash size={24} />,
-    infinity: <InfinityIcon size={24} />,
-    binary: <Binary size={24} />,
+    // infinity: <InfinityIcon size={24} />, // Not available in lucide-react
+    // binary: <Binary size={24} />, // Not available in lucide-react
     alignJustify: <AlignJustify size={24} />,
     atom: <Atom size={24} />,
-    pi: <Pi size={24} />,
+    // pi: <Pi size={24} />, // Not available in lucide-react
     recycle: <Recycle size={24} />
   };
   
